@@ -1,0 +1,12 @@
+/results
+/img
+/trash
+/.venv
+/.idea
+/__pycache__
+/source/__pycache__
+*.pyc
+.DS_Store
+*.gif
+/results*
+/paper_chart*

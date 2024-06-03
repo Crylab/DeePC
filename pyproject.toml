@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "deepc"
+version = "0.1.0"
+description = "Trajectory tracking algorithms for racecar simulation"
+authors = ["Ruslan Shaiakhmetov <ruslan.shaiakhmetov@unibo.it>"]
+license = "+"
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+matplotlib = "3.8.2"
+numpy = "1.26.4"
+osqp = "0.6.5"
+scipy = "1.11.4"
+termcolor = "2.4.0"
+torch = "2.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
