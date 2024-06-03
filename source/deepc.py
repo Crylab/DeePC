@@ -290,7 +290,7 @@ class DeepC:
 
     def solve_raw(self):
         """
-        Solve the optimization problem using raw data.
+        Solve the optimization problem and provide raw OSQP output.
         
         Inputs:
         - None
