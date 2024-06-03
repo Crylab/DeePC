@@ -270,9 +270,7 @@ class DeepC:
         if "beta_Q" in criteria.keys():
             if len(criteria["beta_Q"]) != self.n_outputs:
                 raise Exception("Beta criteria must be provided for n_outputs channels")
-            for each in criteria["beta
-
-_Q"]:
+            for each in criteria["beta_Q"]:
                 if each < 0.0 or each > 1.0:
                     raise Exception("Beta optimization criteria must be within [0, 1]")
         else:
@@ -313,12 +311,15 @@ _Q"]:
             raise Exception("Attempt to solve the problem without criteria")
 
         A0 = -1.0 * np.identity(self.channels * self.finish_length)
-        B0 = np.zeros((self.channels * self.init_length, self.channels * self.finish_length))
+        B0 = np.zeros((self.channels * self.init_length,
+                       self.channels * self.finish_length))
         A1 = np.concatenate((B0, A0)).T
 
-        A2 = np.zeros((self.n_inputs * self.init_length, self.n_outputs * self.init_length))
+        A2 = np.zeros((self.n_inputs * self.init_length,
+                       self.n_outputs * self.init_length))
         B2 = -1.0 * np.identity(self.n_outputs * self.init_length)
-        C2 = np.zeros((self.channels * self.finish_length, self.n_outputs * self.init_length))
+        C2 = np.zeros((self.channels * self.finish_length,
+                       self.n_outputs * self.init_length))
         A3 = np.concatenate((A2, B2, C2)).T
 
         B1 = np.concatenate((self.H, A1, A3))
