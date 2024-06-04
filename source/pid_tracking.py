@@ -67,6 +67,9 @@ class PID_Tracking(track.Abstrack_tracking):
     def tracking_initialization(self) -> None:
         pass
     
+    def tracking_termination(self) -> None:
+        pass
+    
     def control_step(self) -> model.Racecar_Action:
                 
         me = self.past_states[-1]
@@ -89,7 +92,7 @@ class PID_Tracking(track.Abstrack_tracking):
         sig1 = self.direction_loop.update(delta)
         
         sig2 = aim.heading - me.heading+sig1
-        action.steering = self.theta_loop.update(sig2)
+        action.steering = self.heading_loop.update(sig2)
 
         sig3 = self.distance_loop.update(dist)
         sig4 = aim.speed - me.speed + sig3

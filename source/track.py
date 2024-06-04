@@ -164,16 +164,16 @@ class Abstrack_tracking(ABC):
     def set_trajectory(self, trajectory):
         if len(trajectory) != 2:  # X and Y
             self.state.set_error('Reference trajectory must content X and Y')
-        if len(trajectory[0]) < self.INITIAL_HORIZON + self.PREDITION_HORIZON:
+        if len(trajectory[0]) < self.INITIAL_HORIZON + self.PREDICTION_HORIZON:
             self.state.set_error('Reference must content at least finish_length samples')
-        if len(trajectory[1]) < self.INITIAL_HORIZON + self.PREDITION_HORIZON:
+        if len(trajectory[1]) < self.INITIAL_HORIZON + self.PREDICTION_HORIZON:
             self.state.set_error('Reference must content at least finish_length samples')
         if len(trajectory[0]) != len(trajectory[1]):
             self.state.set_error('Reference must content the same samples for X and Y')
 
         self.trajectory = []
         
-        for i in range(1, trajectory[0]):
+        for i in range(1, len(trajectory[0])):
             dx = trajectory[0][i] - trajectory[0][i-1]
             dy = trajectory[1][i] - trajectory[1][i-1]
             velocity = np.sqrt(dx ** 2 + dy ** 2) / self.parameters['dt']
@@ -250,10 +250,10 @@ class Abstrack_tracking(ABC):
         pass
     
     @abstractmethod
-    def tracking_termination(self) -> model.Racecar_Action:
+    def tracking_termination(self) -> None:
         pass
     
-    def trajectory_tracking(self):
+    def trajectory_tracking(self) -> list:
         
         self.state.set_state("Tracking")
         
@@ -263,12 +263,16 @@ class Abstrack_tracking(ABC):
         
         self.tracking_initialization()
                 
-        for i in range(self.INITIAL_HORIZON, len(self.trajectory[0]) - self.PREDICTION_HORIZON):
+        result = []
+                
+        for i in range(self.INITIAL_HORIZON, len(self.trajectory) - self.PREDICTION_HORIZON):
             
             action = self.control_step()
             if self.state.is_error():
                 break
+            
             racecar_step_after = self.model.Step(action)
+            result.append(copy.copy(racecar_step_after))
             self.past_states = self.winshift(self.past_states, racecar_step_after)
             self.reference_states = self.winshift(self.reference_states, self.trajectory[i+self.PREDICTION_HORIZON])
                         
@@ -278,3 +282,4 @@ class Abstrack_tracking(ABC):
         
         self.state.set_state("Finished")
             
+        return result
