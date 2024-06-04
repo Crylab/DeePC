@@ -105,6 +105,7 @@ class Racecar_State_3DOF(Racecar_State):
         """
         super().__init__(x, y, speed, heading)
         self.velocity_x = self.speed
+        del self.speed
         self.velocity_y = 0.0
         self.velocity_heading = 0.0
         
@@ -247,7 +248,7 @@ class Kinematic_model(Abstract_model):
         self.state = Racecar_State()
         super().__init__()
 
-    def Step(self, action: Racecar_Action) -> Racecar_Action:
+    def Step(self, action: Racecar_Action) -> Racecar_State:
         """
         Simulate one time step of the kinematic model.
 
@@ -369,7 +370,7 @@ class Dynamic_model(Kinematic_model):
 
         return weight + downforce
 
-    def Step(self, action: Racecar_Action) -> Racecar_Action:
+    def Step(self, action: Racecar_Action) -> Racecar_State:
         """
         Simulate one time step of the dynamic model.
 
