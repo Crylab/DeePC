@@ -124,6 +124,8 @@ class Abstrack_tracking(ABC):
         elif self.parameters["model"] == 'kinematic':
             self.model = model.Kinematic_model(parameters)
             
+        self.parameters.update(self.model.parameters)
+            
         # Initialize the trajectory
         if self.parameters["track"] == 'Lissajous':
             trajectory = self.__trajectory_generation(
@@ -340,6 +342,16 @@ class Abstrack_tracking(ABC):
         file_name = self.__hash_generator()
         file_path = self.parameters['save_folder'] + '/' + file_name
         return os.path.exists(file_path + '.json')   
+    
+    def get_rss(self) -> float:
+        if self.__is_simulation_exist():
+            file_name = self.__hash_generator()
+            file_path = self.parameters['save_folder'] + '/' + file_name + '.json'
+            with open(file_path, 'r') as f:
+                metadata = json.load(f)
+            return metadata['rss']
+        else:
+            return None
     
     def trajectory_tracking(self) -> list:
         

@@ -4,9 +4,12 @@
 /.venv
 /.idea
 /__pycache__
+/.pytest_cache
+/test/__pycache__
 /source/__pycache__
 *.pyc
 .DS_Store
 *.gif
 /results*
 /paper_chart*
+.csv
