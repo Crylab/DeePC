@@ -6,5 +6,7 @@ import pid_tracking
 if __name__ == "__main__":
     print('Hello world!')
     obj = pid_tracking.PID_Tracking()
-    
+    result = obj.trajectory_tracking()
+    for each in result:
+        print(each)
     

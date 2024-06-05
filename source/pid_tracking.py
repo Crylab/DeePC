@@ -57,6 +57,8 @@ class PID_Tracking(track.Abstrack_tracking):
             self.parameters['distance_loop'] = parameters['distance_loop']
         else:
             self.parameters['distance_loop'] = [0.1, 0.0, 0.0]
+            
+        self.algorithm = 'pid'
         
         self.direction_loop = PID(*self.parameters['direction_loop'])
         self.distance_loop = PID(*self.parameters['distance_loop'])

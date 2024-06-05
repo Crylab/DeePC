@@ -38,6 +38,8 @@ class Racecar_Action:
         saturated_action.steering = np.clip(self.steering, -max_steering, max_steering)
         return saturated_action
 
+    def __str__(self):
+        return "Throttle = {:.2f}".format(self.throttle) + "; Steering = {:.2f}".format(self.steering)+";"
 
 class Racecar_State:
     """
@@ -79,6 +81,8 @@ class Racecar_State:
     def __str__(self):
         return "x = {:.2f}".format(self.x) + "; y = {:.2f}".format(self.y) + "; Speed = {:.2f}".format(self.speed) + "; Heading = {:.2f}".format(self.heading)+";"
 
+    def get_numpy(self):
+        return np.array([self.x, self.y, self.speed, self.heading])
 
 class Racecar_State_3DOF(Racecar_State):
     """

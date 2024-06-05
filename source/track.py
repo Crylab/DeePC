@@ -3,6 +3,13 @@ import model
 import numpy as np
 import copy
 import csv
+import json
+from termcolor import colored
+import time
+import base64
+import hashlib
+import re
+import os
 
 class Tracking_state:
     def __init__(self) -> None:
@@ -14,11 +21,12 @@ class Tracking_state:
         self.error = error
         
     def set_state(self, state: str) -> None:
-        if state != "Error":
+        if self.state != "Error":
             self.state = state
         
     def is_error(self) -> bool:
         return self.state == "Error"
+    
 
 class Abstrack_tracking(ABC):
     def __init__(self, parameters: dict = {}) -> None:
@@ -26,6 +34,7 @@ class Abstrack_tracking(ABC):
         
         self.past_states = []
         self.reference_states = []
+        self.algorithm = None
         
         if True:
             # Initialize the parameters
@@ -94,6 +103,16 @@ class Abstrack_tracking(ABC):
                 self.parameters['dt'] = parameters['dt']
             else:
                 self.parameters['dt'] = 0.01
+                
+            if 'print_out' in parameters.keys():
+                self.parameters['print_out'] = parameters['print_out']
+            else:
+                self.parameters['print_out'] = 'Computation'
+                
+            if 'save_folder' in parameters.keys():
+                self.parameters['save_folder'] = parameters['save_folder']
+            else:
+                self.parameters['save_folder'] = 'results'
             
         # Horizon parameters
         self.INITIAL_HORIZON = self.parameters['initial_horizon']
@@ -107,7 +126,7 @@ class Abstrack_tracking(ABC):
             
         # Initialize the trajectory
         if self.parameters["track"] == 'Lissajous':
-            trajectory = self.trajectory_generation(
+            trajectory = self.__trajectory_generation(
                 circle_time=self.parameters['Lissajous_circle_time'],
                 radius=self.parameters['Lissajous_radius'],
                 a=self.parameters['Lissajous_a'],
@@ -115,19 +134,19 @@ class Abstrack_tracking(ABC):
                 delta=self.parameters['Lissajous_phase'],
             )
         else:
-            trajectory = self.import_trajectory(self.parameters['track'])
+            trajectory = self.__import_trajectory(self.parameters['track'])
         
-        trajectory_cutted = self.cut_trajectory(
+        trajectory_cutted = self.__cut_trajectory(
             trajectory,
             self.parameters['track_lower_bound'],
             self.parameters['track_upper_bound'],
         )
         
-        self.set_trajectory(trajectory_cutted)
+        self.__set_trajectory(trajectory_cutted)
         
         self.state = Tracking_state()
 
-    def trajectory_generation(
+    def __trajectory_generation(
         self,
         circle_time: int = 1000,
         radius: float = 25,
@@ -161,7 +180,7 @@ class Abstrack_tracking(ABC):
             trajectory[1][t] = radius * np.sin(b * time_var)
         return np.array(trajectory)
         
-    def set_trajectory(self, trajectory):
+    def __set_trajectory(self, trajectory):
         if len(trajectory) != 2:  # X and Y
             self.state.set_error('Reference trajectory must content X and Y')
         if len(trajectory[0]) < self.INITIAL_HORIZON + self.PREDICTION_HORIZON:
@@ -202,7 +221,7 @@ class Abstrack_tracking(ABC):
                 )
                 self.trajectory.append(copy.copy(state))
     
-    def cut_trajectory(
+    def __cut_trajectory(
         self, 
         trajectory, 
         lower: float = 0.0,
@@ -214,7 +233,7 @@ class Abstrack_tracking(ABC):
         trajectory_out = trajectory.T[lower_int:upper_int].T
         return trajectory_out
     
-    def import_trajectory(self, file_path: str) -> np.ndarray:
+    def __import_trajectory(self, file_path: str) -> np.ndarray:
         """
         Import a trajectory from a file.
 
@@ -236,7 +255,7 @@ class Abstrack_tracking(ABC):
         trajectory = np.array(lol).T
         return trajectory
     
-    def winshift(self, vector: list, new_val) -> list:
+    def __winshift(self, vector: list, new_val) -> list:
         new_vector = copy.copy(vector[1:])
         new_vector.append(new_val)
         return new_vector
@@ -253,7 +272,83 @@ class Abstrack_tracking(ABC):
     def tracking_termination(self) -> None:
         pass
     
+    def __tracking_error(self, result: list) -> float:
+        bank = 0.0
+        shift = self.INITIAL_HORIZON + 1
+        for i in range(0, len(result)):
+            dx = result[i].x-self.trajectory[i+shift].x
+            dy = result[i].y-self.trajectory[i+shift].y
+            dist = np.sqrt(dx ** 2 + dy ** 2)
+            bank += dist
+        return bank/len(result)
+    
+    def __restore_result(self, file_name: str) -> list:
+        result = []
+        file_path = self.parameters['save_folder'] + '/' + file_name
+        np_array = np.load(file_path)
+        for each in np_array:
+            state = model.Racecar_State(each[0], each[1], each[2], each[3])
+            result.append(state)
+        return result
+    
+    def __hash_generator(self) -> str:            
+        hash_dict = copy.copy(self.parameters)
+        hash_dict.pop('save_folder', None)
+        hash_dict.pop('print_out', None)
+        hash_dict['algorithm'] = self.algorithm
+        if hash_dict['track'] != 'Lissajous':
+            hash_dict.pop('Lissajous_a', None)
+            hash_dict.pop('Lissajous_b', None)
+            hash_dict.pop('Lissajous_phase', None)
+            hash_dict.pop('Lissajous_radius', None)
+            hash_dict.pop('Lissajous_circle_time', None)
+        summary = base64.b64encode(hashlib.md5(
+            str(hash_dict).encode()).digest()).replace(b'=', b'a').decode()
+        id = f"{self.parameters['track']}-{self.algorithm}-{self.parameters['prediction_horizon']}-{summary}"
+        s = str(id).strip().replace(" ", "_")
+        file_name = re.sub(r"(?u)[^-\w.]", "", s)
+        return file_name
+    
+    def __save_result(self, result: list, rss: float, time: float) -> None:
+        # Save the result to numpy file and self.parameters to json file
+        
+        file_name = self.__hash_generator()
+        file_path = self.parameters['save_folder'] + '/' + file_name
+        os.makedirs(self.parameters['save_folder'], exist_ok=True)
+        numpy_array = []
+        for each in result:
+            numpy_array.append(each.get_numpy())
+        np.save(file_path, np.array(numpy_array))
+        
+        metadata = {
+            'algorithm': self.algorithm,
+            'state': self.state.state,
+            'rss': rss,
+            'time': time,
+            'id': file_name,
+        }
+        
+        if self.state.is_error():
+            metadata['error'] = self.state.error
+        
+        self.parameters.update(metadata)
+        
+        with open(file_path + '.json', 'w+') as f:
+            json.dump(self.parameters, f)
+            
+    def __is_simulation_exist(self) -> bool:
+        file_name = self.__hash_generator()
+        file_path = self.parameters['save_folder'] + '/' + file_name
+        return os.path.exists(file_path + '.json')   
+    
     def trajectory_tracking(self) -> list:
+        
+        if self.__is_simulation_exist():
+            if self.parameters['print_out'] != 'Nothing':
+                print(colored('Trajectory tracking: ', 'green'), colored('Suspended', 'white'))
+                print(colored('Simulation is already done!', 'white'))
+                result = self.__restore_result(self.__hash_generator() + '.npy')
+            return result
         
         self.state.set_state("Tracking")
         
@@ -264,22 +359,60 @@ class Abstrack_tracking(ABC):
         self.tracking_initialization()
                 
         result = []
+        
+        total_time = len(self.trajectory) - self.INITIAL_HORIZON - self.PREDICTION_HORIZON
+        
+        percent_counter = 1
+        
+        start_time = time.time()
                 
-        for i in range(self.INITIAL_HORIZON, len(self.trajectory) - self.PREDICTION_HORIZON):
+        for t in range(self.INITIAL_HORIZON, len(self.trajectory) - self.PREDICTION_HORIZON):            
             
+            percent = 100.0 * (t - self.INITIAL_HORIZON) / total_time
+            if percent > percent_counter:
+                percent_counter += 1
+                if self.parameters['print_out'] != 'Nothing':
+                    print(colored('Trajectory tracking: ', 'yellow'), colored(percent_counter - 1, 'white'), colored('%', 'yellow'))
+                    current_time = (101 - percent_counter) * (time.time() - start_time) / percent_counter
+                    print(colored('Estimated time: ', 'red'), colored(current_time, 'white'), colored(' sec. left', 'red'))
+                        
             action = self.control_step()
+            
             if self.state.is_error():
                 break
             
+            if self.parameters['print_out'] == 'Everything':
+                print(colored('Action: ', 'green'), colored(action, 'white'))
+            
             racecar_step_after = self.model.Step(action)
+            
+            if self.parameters['print_out'] == 'Everything':
+                print(colored('State after: ', 'green'), colored(racecar_step_after, 'white'))
+            
             result.append(copy.copy(racecar_step_after))
-            self.past_states = self.winshift(self.past_states, racecar_step_after)
-            self.reference_states = self.winshift(self.reference_states, self.trajectory[i+self.PREDICTION_HORIZON])
+            self.past_states = self.__winshift(self.past_states, racecar_step_after)
+            self.reference_states = self.__winshift(self.reference_states, self.trajectory[t+self.PREDICTION_HORIZON])
                         
         self.state.set_state("Postprocessing")
+        
+        exec_time = time.time()-start_time
+        
+        error_per = self.__tracking_error(result)
+        
+        if self.parameters['print_out'] != 'Nothing':
+            if self.state.is_error():
+                print(colored('Trajectory tracking: ', 'green') + colored('Failed', 'red'))
+                print(colored('Error: ', 'red'), colored(self.state.error, 'white'))
+            else:
+                print(colored('Trajectory tracking: Succeded', 'green'))
+            print(colored('Accumulated tracking error per point:', 'green'), colored('{:.2f} m.'.format(error_per), 'white'))
+            print(colored('Execution time:', 'green'), colored('{:.2f} s.'.format(exec_time), 'white'))
+            print(colored('Averege responce time:', 'green'), colored('{:.2f} s.'.format(exec_time/total_time), 'white'))
             
         self.tracking_termination()
         
         self.state.set_state("Finished")
+            
+        self.__save_result(result, error_per, exec_time)
             
         return result
