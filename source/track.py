@@ -29,90 +29,38 @@ class Tracking_state:
     
 
 class Abstrack_tracking(ABC):
-    def __init__(self, parameters: dict = {}) -> None:
+    def set_default_parameters(self, dict_in: dict, name: str, value) -> None:
+        if name in dict_in.keys():
+                self.parameters[name] = dict_in[name]
+        else:
+            self.parameters[name] = value
+    
+    def __init__(self, parameters: dict = {}) -> None:        
         super().__init__()
         
         self.past_states = []
+        self.past_actions = []
         self.reference_states = []
         self.algorithm = None
         
         if True:
             # Initialize the parameters
             self.parameters = {}
-            if "model" in parameters.keys():
-                self.parameters["model"] = parameters["model"]
-            else:
-                self.parameters["model"] = 'dynamic'
-                
-            if "track" in parameters.keys():
-                self.parameters["track"] = parameters["track"]
-            else:
-                self.parameters["track"] = 'Lissajous'
-                
-            if 'Lissajous_a' in parameters.keys():
-                self.parameters['Lissajous_a'] = parameters['Lissajous_a']
-            else:
-                self.parameters['Lissajous_a'] = 1
-
-            if 'Lissajous_b' in parameters.keys():
-                self.parameters['Lissajous_b'] = parameters['Lissajous_b']
-            else:
-                self.parameters['Lissajous_b'] = 2
-
-            if 'Lissajous_phase' in parameters.keys():
-                self.parameters['Lissajous_phase'] = parameters['Lissajous_phase']
-            else:
-                self.parameters['Lissajous_phase'] = 0.0
-
-            if 'Lissajous_radius' in parameters.keys():
-                self.parameters['Lissajous_radius'] = parameters['Lissajous_radius']
-            else:
-                self.parameters['Lissajous_radius'] = 100.0
-
-            if 'Lissajous_circle_time' in parameters.keys():
-                self.parameters['Lissajous_circle_time'] = parameters['Lissajous_circle_time']
-            else:
-                self.parameters['Lissajous_circle_time'] = 5000
-                
-            if 'track_upper_bound' in parameters.keys():
-                self.parameters['track_upper_bound'] = parameters['track_upper_bound']
-            else:
-                self.parameters['track_upper_bound'] = 100.0
-
-            if 'track_lower_bound' in parameters.keys():
-                self.parameters['track_lower_bound'] = parameters['track_lower_bound']
-            else:
-                self.parameters['track_lower_bound'] = 0.0
-                
-            if 'initial_horizon' in parameters.keys():
-                self.parameters['initial_horizon'] = parameters['initial_horizon']
-            else:
-                self.parameters['initial_horizon'] = 1
-                
-            if 'prediction_horizon' in parameters.keys():
-                self.parameters['prediction_horizon'] = parameters['prediction_horizon']
-            else:
-                self.parameters['prediction_horizon'] = 1
-                
-            if 'max_tracking_error' in parameters.keys():
-                self.parameters['max_tracking_error'] = parameters['max_tracking_error']
-            else:
-                self.parameters['max_tracking_error'] = 9999.9
-                
-            if 'dt' in parameters.keys():
-                self.parameters['dt'] = parameters['dt']
-            else:
-                self.parameters['dt'] = 0.01
-                
-            if 'print_out' in parameters.keys():
-                self.parameters['print_out'] = parameters['print_out']
-            else:
-                self.parameters['print_out'] = 'Computation'
-                
-            if 'save_folder' in parameters.keys():
-                self.parameters['save_folder'] = parameters['save_folder']
-            else:
-                self.parameters['save_folder'] = 'results'
+            self.set_default_parameters(parameters, 'model', 'dynamic')
+            self.set_default_parameters(parameters, 'track', 'Lissajous')
+            self.set_default_parameters(parameters, 'Lissajous_a', 1)
+            self.set_default_parameters(parameters, 'Lissajous_b', 2)
+            self.set_default_parameters(parameters, 'Lissajous_phase', 0.0)
+            self.set_default_parameters(parameters, 'Lissajous_radius', 100.0)
+            self.set_default_parameters(parameters, 'Lissajous_circle_time', 5000)
+            self.set_default_parameters(parameters, 'track_upper_bound', 100.0)
+            self.set_default_parameters(parameters, 'track_lower_bound', 0.0)
+            self.set_default_parameters(parameters, 'initial_horizon', 1)
+            self.set_default_parameters(parameters, 'prediction_horizon', 1)
+            self.set_default_parameters(parameters, 'max_tracking_error', 9999.9)
+            self.set_default_parameters(parameters, 'dt', 0.01)
+            self.set_default_parameters(parameters, 'print_out', 'Computation')
+            self.set_default_parameters(parameters, 'save_folder', 'results')
             
         # Horizon parameters
         self.INITIAL_HORIZON = self.parameters['initial_horizon']
@@ -201,15 +149,15 @@ class Abstrack_tracking(ABC):
             theta = np.arctan2(dy, dx)
             if i == 1:
                 state = model.Racecar_State(
-                    trajectory[0][1], 
-                    trajectory[1][1], 
+                    trajectory[0][0], 
+                    trajectory[1][0], 
                     velocity, 
                     theta
                 )
-                self.trajectory.append(copy.copy(state))
-                state.x = trajectory[0][0]
-                state.y = trajectory[1][0]
-                self.trajectory.append(copy.copy(state))
+                self.trajectory.append(state.copy())
+                state.x = trajectory[0][1]
+                state.y = trajectory[1][1]
+                self.trajectory.append(state.copy())
             else:
                 while theta - self.trajectory[-1].heading > np.pi/2:
                     theta = theta - 2 * np.pi
@@ -221,7 +169,7 @@ class Abstrack_tracking(ABC):
                     velocity, 
                     theta
                 )
-                self.trajectory.append(copy.copy(state))
+                self.trajectory.append(state.copy())
     
     def __cut_trajectory(
         self, 
@@ -267,7 +215,7 @@ class Abstrack_tracking(ABC):
         pass
     
     @abstractmethod
-    def control_step(self, Initial_conditions) -> model.Racecar_Action:
+    def control_step(self) -> model.Racecar_Action:
         pass
     
     @abstractmethod
@@ -365,10 +313,14 @@ class Abstrack_tracking(ABC):
         self.state.set_state("Tracking")
         
         self.past_states = copy.copy(self.trajectory[:self.INITIAL_HORIZON])
-        self.model.Initialization(self.past_states[-1])        
+        for _ in range(self.INITIAL_HORIZON):
+            self.past_actions.append(model.Racecar_Action(0.0, 0.0))
+            
         self.reference_states = copy.copy(self.trajectory[self.INITIAL_HORIZON:self.INITIAL_HORIZON + self.PREDICTION_HORIZON])
         
         self.tracking_initialization()
+                
+        self.model.Initialization(self.past_states[-1])    
                 
         result = []
         
@@ -401,8 +353,9 @@ class Abstrack_tracking(ABC):
             if self.parameters['print_out'] == 'Everything':
                 print(colored('State after: ', 'green'), colored(racecar_step_after, 'white'))
             
-            result.append(copy.copy(racecar_step_after))
+            result.append(racecar_step_after.copy())
             self.past_states = self.__winshift(self.past_states, racecar_step_after)
+            self.past_actions = self.__winshift(self.past_actions, action)
             self.reference_states = self.__winshift(self.reference_states, self.trajectory[t+self.PREDICTION_HORIZON])
                         
         self.state.set_state("Postprocessing")

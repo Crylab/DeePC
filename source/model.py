@@ -41,6 +41,12 @@ class Racecar_Action:
     def __str__(self):
         return "Throttle = {:.2f}".format(self.throttle) + "; Steering = {:.2f}".format(self.steering)+";"
 
+    def copy(self):
+        return copy.copy(self)
+    
+    def get_numpy(self):
+        return np.array([self.throttle, self.steering])
+
 class Racecar_State:
     """
     This class defines the state of a racecar, including position, speed, and heading.
@@ -83,6 +89,78 @@ class Racecar_State:
 
     def get_numpy(self):
         return np.array([self.x, self.y, self.speed, self.heading])
+    
+    def copy(self):
+        return copy.copy(self)
+    
+    def coordinate_change_at(self, x: float, y: float, heading: float) -> "Racecar_State":
+        """
+        Change the coordinate system of the racecar state.
+
+        Parameters:
+            x (float): X-coordinate of the new origin.
+            y (float): Y-coordinate of the new origin.
+            heading (float): Heading angle of the new coordinate system.
+
+        Returns:
+            Racecar
+        """
+        new_state = copy.copy(self)
+        rot_mat = np.array([[np.cos(-heading), -np.sin(-heading)], 
+                            [np.sin(-heading), np.cos(-heading)]]
+                           )
+        new_state.x -= x
+        new_state.y -= y
+        position = new_state.position()
+        new_position = np.matmul(rot_mat, position)  
+        new_state.x = new_position[0]
+        new_state.y = new_position[1]      
+        new_state.heading -= heading 
+        return new_state
+    
+    def coordinate_change(self, pole_state: "Racecar_State") -> "Racecar_State":
+        """
+        Change the coordinate system of the racecar state.
+
+        Parameters:
+            x (float): X-coordinate of the new origin.
+            y (float): Y-coordinate of the new origin.
+            heading (float): Heading angle of the new coordinate system.
+
+        Returns:
+            Racecar
+        """
+        new_state = copy.copy(self)
+        result = new_state.coordinate_change_at(pole_state.x, pole_state.y, pole_state.heading)
+        return result
+    
+class Racecar_State_Full(Racecar_State, Racecar_Action):
+    
+    def __init__(self, x: float = 0.0, y: float = 0.0, speed: float = 0.0, heading: float = 0.0, throttle: float = 0.0, steering: float = 0.0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.speed = speed
+        self.heading = heading
+        self.throttle = throttle
+        self.steering = steering
+        
+    def get_numpy(self):
+        return np.array([self.x, self.y, self.speed, self.heading, self.throttle, self.steering])
+    
+    def copy(self):
+        return copy.copy(self)
+    
+    def __str__(self):
+        return "x = {:.2f}".format(self.x) + "; y = {:.2f}".format(self.y) + "; Speed = {:.2f}".format(self.speed) + "; Heading = {:.2f}".format(self.heading)+"; Throttle = {:.2f}".format(self.throttle) + "; Steering = {:.2f}".format(self.steering)+";"
+    
+    def get_Racecar_State(self):
+        return Racecar_State(self.x, self.y, self.speed, self.heading)
+    
+    def get_Racecar_Action(self):
+        return Racecar_Action(self.throttle, self.steering)
+    
+                 
 
 class Racecar_State_3DOF(Racecar_State):
     """
@@ -212,7 +290,12 @@ class Kinematic_model(Abstract_model):
         parameters (dict): Dictionary of model parameters.
         state (Racecar_State): Current state of the racecar.
     """
-
+    def set_default_parameters(self, dict_in: dict, name: str, value) -> None:
+        if name in dict_in.keys():
+                self.parameters[name] = dict_in[name]
+        else:
+            self.parameters[name] = value
+    
     def __init__(self, parameters: dict = {}) -> None:
         """
         Initialize the Kinematic_model with default or provided parameters.
@@ -224,30 +307,13 @@ class Kinematic_model(Abstract_model):
             None
         """
         self.parameters = {}
-        if "wheelbase" in parameters.keys():
-            self.parameters["wheelbase"] = parameters["wheelbase"]
-        else:
-            self.parameters["wheelbase"] = 3.135  # m
-        if "engine_force" in parameters.keys():
-            self.parameters["engine_force"] = parameters["engine_force"]
-        else:
-            self.parameters["engine_force"] = 8800.0  # Newtons
-        if "mass" in parameters.keys():
-            self.parameters["mass"] = parameters["mass"]
-        else:
-            self.parameters["mass"] = 896.0  # kg
-        if "brake_force" in parameters.keys():
-            self.parameters["brake_force"] = parameters["brake_force"]
-        else:
-            self.parameters["brake_force"] = 30764.0
-        if "max_steering_angle" in parameters.keys():
-            self.parameters["max_steering_angle"] = parameters["max_steering_angle"]
-        else:
-            self.parameters["max_steering_angle"] = 0.26  # Radians
-        if "dt" in parameters.keys():
-            self.parameters["dt"] = parameters["dt"]
-        else:
-            self.parameters["dt"] = 0.01  # Seconds
+        
+        self.set_default_parameters(parameters, "wheelbase", 3.135) # m
+        self.set_default_parameters(parameters, "engine_force", 8800.0) # Newtons
+        self.set_default_parameters(parameters, "mass", 896.0) # kg
+        self.set_default_parameters(parameters, "brake_force", 30764.0) # Newtons
+        self.set_default_parameters(parameters, "max_steering_angle", 0.26) # Radians
+        self.set_default_parameters(parameters, "dt", 0.01) # Seconds
 
         self.state = Racecar_State()
         super().__init__()
@@ -314,40 +380,17 @@ class Dynamic_model(Kinematic_model):
         super().__init__(parameters=parameters)
 
         # Tires parameters
-        if "pacejka_D" in parameters.keys():
-            self.parameters["pacejka_D"] = parameters["pacejka_D"]
-        else:
-            self.parameters["pacejka_D"] = 1.0
-        if "pacejka_C" in parameters.keys():
-            self.parameters["pacejka_C"] = parameters["pacejka_C"]
-        else:
-            self.parameters["pacejka_C"] = 1.1
-        if "pacejka_B" in parameters.keys():
-            self.parameters["pacejka_B"] = parameters["pacejka_B"]
-        else:
-            self.parameters["pacejka_B"] = 25.0
+        self.set_default_parameters(parameters, "pacejka_D", 1.0)
+        self.set_default_parameters(parameters, "pacejka_C", 1.1)
+        self.set_default_parameters(parameters, "pacejka_B", 25.0)
 
         # Aerodynamic parameters
-        if "drag_coefficient" in parameters.keys():
-            self.parameters["drag_coefficient"] = parameters["drag_coefficient"]
-        else:
-            self.parameters["drag_coefficient"] = 1.35  # m^2
-        if "downforce_coefficient" in parameters.keys():
-            self.parameters["downforce_coefficient"] = parameters[
-                "downforce_coefficient"
-            ]
-        else:
-            self.parameters["downforce_coefficient"] = 4.31  # m^2
-
+        self.set_default_parameters(parameters, "drag_coefficient", 1.35) # m^2
+        self.set_default_parameters(parameters, "downforce_coefficient", 4.31) # m^2
+        
         # Other physical parameters
-        if "inertia_moment" in parameters.keys():
-            self.parameters["inertia_moment"] = parameters["inertia_moment"]
-        else:
-            self.parameters["inertia_moment"] = 1500  # kg m^2
-        if "power" in parameters.keys():
-            self.parameters["power"] = parameters["power"]
-        else:
-            self.parameters["power"] = 462334  # W
+        self.set_default_parameters(parameters, "inertia_moment", 1500) # kg m^2
+        self.set_default_parameters(parameters, "power", 462334) # Watts
 
         self.state = Racecar_State_3DOF()
 

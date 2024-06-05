@@ -1,9 +1,6 @@
 import track
-from abc import ABC, abstractmethod
 import model
 import numpy as np
-import copy
-import csv
 
 class PID:
     def __init__(self, kp, ki, kd):
@@ -38,26 +35,11 @@ class PID_Tracking(track.Abstrack_tracking):
     def __init__(self, parameters: dict = {}) -> None:
         super().__init__(parameters)
         
-        if 'heading_loop' in parameters.keys():
-            self.parameters['heading_loop'] = parameters['heading_loop']
-        else:
-            self.parameters['heading_loop'] = [1.0, 0.0, 0.0]
-
-        if 'velocity_loop' in parameters.keys():
-            self.parameters['velocity_loop'] = parameters['velocity_loop']
-        else:
-            self.parameters['velocity_loop'] = [1.0, 0.0, 0.0]
-
-        if 'direction_loop' in parameters.keys():
-            self.parameters['direction_loop'] = parameters['direction_loop']
-        else:
-            self.parameters['direction_loop'] = [0.1, 0.0, 0.0]
-
-        if 'distance_loop' in parameters.keys():
-            self.parameters['distance_loop'] = parameters['distance_loop']
-        else:
-            self.parameters['distance_loop'] = [0.1, 0.0, 0.0]
-            
+        self.set_default_parameters(parameters, 'heading_loop', [1.0, 0.0, 0.0])
+        self.set_default_parameters(parameters, 'velocity_loop', [1.0, 0.0, 0.0])
+        self.set_default_parameters(parameters, 'direction_loop', [0.1, 0.0, 0.0])
+        self.set_default_parameters(parameters, 'distance_loop', [0.1, 0.0, 0.0])
+        
         self.algorithm = 'pid'
         
         self.direction_loop = PID(*self.parameters['direction_loop'])

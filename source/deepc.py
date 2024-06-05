@@ -23,13 +23,13 @@ class DeepC:
         else:
             raise Exception("Unknown size of the dataset")
 
-        if "init_length" in params.keys():
-            self.init_length = params["init_length"]
+        if "initial_horizon" in params.keys():
+            self.init_length = params["initial_horizon"]
         else:
             raise Exception("Unknown length of initial conditions")
 
-        if "finish_length" in params.keys():
-            self.finish_length = params["finish_length"]
+        if "prediction_horizon" in params.keys():
+            self.finish_length = params["prediction_horizon"]
         else:
             raise Exception("Unknown length of prediction horizon")
 
