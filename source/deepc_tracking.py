@@ -93,6 +93,8 @@ class DEEPC_Tracking(track.Abstrack_tracking):
         
         # Solve the optimization problem
         result = self.deepc.solve().T
+        if result is None:
+            return self.state.set_error("Optimization failed")
         action = model.Racecar_Action(result[0][0], result[0][1])
         
         return action

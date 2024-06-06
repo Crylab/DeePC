@@ -380,7 +380,7 @@ class DeepC:
         self.solver.setup(D0_sparse, E0, B1_sparse, C1, C1, verbose=False)
         results = self.solver.solve()
         if results.info.status_val != 1:
-            raise Exception("Problem is unfeasible")
+            return None
         return results
 
     def solve(self):
@@ -397,6 +397,8 @@ class DeepC:
         - None
         """
         results = self.solve_raw()
+        if results is None:
+            return None        
         solution = np.array([[0.0] * self.finish_length] * self.n_inputs)
         for input_iter in range(0, self.n_inputs):
             solution[input_iter] = results.x[

@@ -23,6 +23,20 @@ class Racecar_Action:
         self.throttle = throttle
         self.steering = steering
 
+    def quadratic_error(self, action: "Racecar_Action", weight: list) -> float:
+        """
+        Calculate the quadratic error between two actions.
+
+        Parameters:
+            action (Racecar_Action): The action to compare with.
+            weight (list): The weight of each action variable.
+
+        Returns:
+            float: The quadratic error between the two actions.
+        """
+        return weight[0]*(self.throttle - action.throttle)**2 + \
+               weight[1]*(self.steering - action.steering)**2
+
     def saturate(self, max_steering: float = 1.57):
         """
         Saturate the throttle and steering values within their respective limits.
@@ -74,6 +88,22 @@ class Racecar_State:
         self.y = y
         self.speed = speed
         self.heading = heading
+        
+    def quadratic_error(self, state: "Racecar_State", weight: list) -> float:
+        """
+        Calculate the quadratic error between two states.
+
+        Parameters:
+            state (Racecar_State): The state to compare with.
+            weight (list): The weight of each state variable.
+
+        Returns:
+            float: The quadratic error between the two states.
+        """
+        return weight[0]*(self.x - state.x)**2 + \
+               weight[1]*(self.y - state.y)**2 + \
+               weight[2]*(self.speed - state.speed)**2 + \
+               weight[3]*(self.heading - state.heading)**2
 
     def position(self):
         """
