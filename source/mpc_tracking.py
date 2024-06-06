@@ -22,35 +22,13 @@ class MPC_Tracking(track.Abstrack_tracking):
         self.predictive_model = BicycleModel(
             device=self.device,
             parameters=self.parameters.copy(),
-        )  
-       
-    def __cost_function(self, actions: torch.tensor):
-        self.predictive_model.Initialization(self.model.state.get_Racecar_State())
-        for i in range(self.parameters["prediction_horizon"]):
-            act = model.Racecar_Action(actions[i*2], actions[i*2+1])
-            next_state = self.predictive_model.Step(act)
-            cost = next_state.quadratic_error(self.reference_states[i], self.parameters["Q"]) +\
-                act.quadratic_error(model.Racecar_Action(), weight=self.parameters["R"])
-        return cost
+        )
     
     def tracking_initialization(self) -> None:
         pass
         
     def tracking_termination(self) -> None:
         pass
-        
-    #def control_step(self) -> model.Racecar_Action:
-    #    actions = torch.tensor([0.0] * self.PREDICTION_HORIZON * 2, requires_grad=True)        
-    #    optimizer = optim.AdamW([actions], lr=0.1, amsgrad=True)        
-    #    for iter in range(0, 100):
-    #        optimizer.zero_grad()
-    #        cost = self.__cost_function(actions)
-    #        with torch.autograd.set_detect_anomaly(True):
-    #            cost.backward()
-    #        optimizer.step()
-    #        
-    #    return model.Racecar_Action(actions[0], actions[1])
-    
     
     def control_step(self) -> model.Racecar_Action:
         accels = self.warmup_control[0].tolist()
@@ -68,7 +46,10 @@ class MPC_Tracking(track.Abstrack_tracking):
         speed_0 = torch.tensor(self.model.state.get_Racecar_State().speed).to(self.device)
         yaw_0 = torch.tensor(self.model.state.heading).to(self.device)
 
-        for iter in range(0, 100):
+        relative_cost_threshold = 0.001  # Stop if improvement is less than 1%
+        previous_loss = float('inf')
+        
+        for iter in range(0, 200):
             optimizer.zero_grad()
 
             x, y, yaw, speed = self.predictive_model(x_0, y_0, yaw_0, speed_0)
@@ -89,10 +70,17 @@ class MPC_Tracking(track.Abstrack_tracking):
                          self.parameters['Q'][2] * loss_mse_vel + \
                          self.parameters['Q'][3] * loss_mse_omega + \
                          self.parameters['R'][0] * loss_reg
+                         
+            improvement = (previous_loss - total_loss.item()) / previous_loss
+            if improvement < relative_cost_threshold:
+                break
+            
+            previous_loss = total_loss.item()
+            
             total_loss.backward()
             optimizer.step()
 
-        prediction, control = self.predictive_model.get_state()
+        _, control = self.predictive_model.get_state()
         
         self.warmup_control = np.copy(control)
         
