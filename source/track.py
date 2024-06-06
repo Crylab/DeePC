@@ -308,6 +308,7 @@ class Abstrack_tracking(ABC):
                 print(colored('Trajectory tracking: ', 'green'), colored('Suspended', 'white'))
                 print(colored('Simulation is already done!', 'white'))
                 result = self.__restore_result(self.__hash_generator() + '.npy')
+                self.rss = self.get_rss()
             return result
         
         self.state.set_state("Tracking")
@@ -363,6 +364,8 @@ class Abstrack_tracking(ABC):
         exec_time = time.time()-start_time
         
         error_per = self.__tracking_error(result)
+        
+        self.rss = error_per
         
         if self.parameters['print_out'] != 'Nothing':
             if self.state.is_error():
