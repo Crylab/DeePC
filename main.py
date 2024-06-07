@@ -19,7 +19,7 @@ def run_experiment(dict_in: dict):
         obj = deepc_tracking.DEEPC_Tracking(dict_in)
     elif dict_in["algorithm"] == "mpc":
         obj = mpc_tracking.MPC_Tracking(dict_in)
-    result = obj.trajectory_tracking()
+    obj.trajectory_tracking()
     rss = obj.rss
     return rss
 
@@ -134,7 +134,7 @@ def nice_abu_dhabi_picture():
  
 def abu_dhabi():
     
-    list_in = np.arange(0.8, 1.6, 0.01)
+    list_in = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
     # Experiment plotting
     fig, ax = plt.subplots()
     
@@ -142,7 +142,7 @@ def abu_dhabi():
         "heading_loop": [2.0, 0.0, 0.0],
         "velocity_loop": [3.0, 0.0, 0.0],
         "direction_loop": [0.1, 0.0, 0.0],
-        "distance_loop": [0.3, 0.0, 0.0],
+        "distance_loop": [0.1, 0.0, 0.0],
         "algorithm": "pid",
         'track': "ABU_F2.csv",
     }
@@ -156,8 +156,9 @@ def abu_dhabi():
         "algorithm": "mpc",
         'track': "ABU_F2.csv",
     }
-    mpc = run_parallel(mpc_parameters, list_in, "pacejka_D")
-    plot_line_shadow(list_in, mpc, '--', "red", "MPC")
+    mpc_list_in = np.arange(0.8, 1.6, 0.01)
+    mpc = run_parallel(mpc_parameters, mpc_list_in, "pacejka_D")
+    plot_line_shadow(mpc_list_in, mpc, '--', "red", "MPC")
     
     N_list = [50, 100, 200, 400]
     for i in range(4):
@@ -186,6 +187,7 @@ def abu_dhabi():
 def circle_time():
     
     list_in = range(3000, 4500, 100)
+    list_print = [x / 100 for x in list_in]
     # Experiment plotting
     fig, ax = plt.subplots()
     
@@ -193,20 +195,22 @@ def circle_time():
         "heading_loop": [2.0, 0.0, 0.0],
         "velocity_loop": [3.0, 0.0, 0.0],
         "direction_loop": [0.1, 0.0, 0.0],
-        "distance_loop": [0.3, 0.0, 0.0],
-        "algorithm": "pid"
+        "distance_loop": [0.1, 0.0, 0.0],
+        "algorithm": "pid",
+        'save_folder': 'results_circle_time',
     }
     pid = run_parallel(pid_parameters, list_in, "Lissajous_circle_time")
-    plot_line_shadow(list_in, pid, '--', "black", "PID")
+    plot_line_shadow(list_print, pid, '--', "black", "PID")
     
     mpc_parameters = {
         'Q': [1, 1, 1, 100],
         'R': [0.1, 0.1],
         'prediction_horizon': 8,
-        "algorithm": "mpc"
+        "algorithm": "mpc",
+        'save_folder': 'results_circle_time',
     }
     mpc = run_parallel(mpc_parameters, list_in, "Lissajous_circle_time")
-    plot_line_shadow(list_in, mpc, '--', "red", "MPC")
+    plot_line_shadow(list_print, mpc, '--', "red", "MPC")
     
     N_list = [50, 100, 200, 400]
     for i in range(4):
@@ -219,7 +223,7 @@ def circle_time():
         deepc_parameters = mpc_parameters.copy()
         deepc_parameters.update(deepc_parameters_update)
         deepc = run_parallel(deepc_parameters, list_in, "Lissajous_circle_time", True)
-        plot_line_shadow(list_in, deepc, '-', viridis(float(i/len(N_list))), "DeePC, N="+str(N_list[i]))
+        plot_line_shadow(list_print, deepc, '-', viridis(float(i/len(N_list))), "DeePC, N="+str(N_list[i]))
     
     plt.xlabel("Lissajous total time, s")
     plt.ylabel("RSS of tracking deviation per step, m")
@@ -233,7 +237,7 @@ def circle_time():
     print(f"Look at the picture: img/Circle_time_new.pdf")
     
 def pid_optimization_abu_dhabi():
-    list_in = np.arange(0.8, 1.6, 0.01)
+    list_in = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
     def cost_function(vec: list):
         parameters = {
             "heading_loop": [vec[0], 0.0, 0.0],
@@ -241,9 +245,12 @@ def pid_optimization_abu_dhabi():
             "direction_loop": [vec[2], 0.0, 0.0],
             "distance_loop": [vec[3], 0.0, 0.0],
             'track': "ABU_F2.csv",
+            'save_folder': 'results_pid_opt',
+            'algorithm': 'pid', 
+            'print_out': 'Nothing',
         }
-        res, _ = run_parallel(parameters, list_in, "pacejka_D")
-        return sum(res)
+        res = run_parallel(parameters, list_in, "pacejka_D")
+        return sum(res[0])
     
     def gradient(vec: list):
         base = cost_function(vec)
@@ -256,11 +263,16 @@ def pid_optimization_abu_dhabi():
             local = cost_function(local_vec)
             result.append((local-base)/step)
         return result
-
+    
+    vec = [1.0, 1.0, 0.1, 0.1]
+    base = cost_function(vec)
+    print(base)
+    return base
     alpha = 0.1
-    for iter in range(100):
+    for iter in range(5):
         vec = [1.0, 1.0, 0.1, 0.1]
         g_vec = gradient(vec)
+        print(g_vec)
         for i in range(4):
             vec[i] -= g_vec[i] * alpha
     print("Resultance vec" + str(vec))
@@ -268,9 +280,10 @@ def pid_optimization_abu_dhabi():
     
 def ph_vs_ds():
     list_in = [2, 4, 6, 8, 10, 12, 16]
+    list_print = [x * 10 for x in list_in]
     # Experiment plotting
     fig, ax = plt.subplots()
-    N_list = [50, 100, 200, 400]
+    N_list = [50, 100, 200, 400]#[50, 100, 200, 400]
     for i in range(4):
         deepc_parameters = {
             'Q': [1, 1, 1, 100],
@@ -281,95 +294,31 @@ def ph_vs_ds():
             'N': N_list[i],
             "algorithm": "deepc",
             "Lissajous_circle_time": 4500,
+            'save_folder': 'results_ph_ds',
         }
         deepc = run_parallel(deepc_parameters, list_in, "prediction_horizon", True)
-        plot_line_shadow(list_in, deepc, '-', viridis(float(i/len(N_list))), "DeePC, N="+str(N_list[i]))
-    plt.xlabel("Lissajous total time, s")
+        plot_line_shadow(list_print, deepc, '-', viridis(float(i/len(N_list))), "DeePC, N="+str(N_list[i]))
+    plt.xlabel("Prediction horizon, ms")
     plt.ylabel("RSS of tracking deviation per step, m")
     #ax.set_yscale('log')
-    ax.set_yscale('symlog', linthresh=1e0)
+    ax.set_yscale('symlog', linthresh=1e-1)
     #ax.set_xscale('log')
     plt.legend()
     plt.grid()
-    plt.title("Tracking error vs. trace difficulty")
-    plt.savefig(f"img/Circle_time_new.pdf")
-    print(f"Look at the picture: img/Circle_time_new.pdf")
+    plt.title("DeePC: Dataset size (N) vs. prediction horizon")
+    plt.savefig(f"img/Ds_vs_ph.pdf")
+    print(f"Look at the picture: img/Ds_vs_ph.pdf")
     
 if __name__ == "__main__":
-    
-    pid_optimization_abu_dhabi()
-    
-    #circle_time()
-    #abu_dhabi()
+    # Shit
+    #pid_optimization_abu_dhabi()
+    #Done
+    ph_vs_ds()
+    #Done
+    circle_time()
+    #Done
+    abu_dhabi()
+    #Done
+    nice_abu_dhabi_picture()
     exit()
-    print('Hello world!')
-    parameters = {
-        "heading_loop": [1.1, 0.0, 0.0],
-        "velocity_loop": [3.5, 0.0, 0.0],
-        "direction_loop": [0.7, 0.0, 0.0],
-        "distance_loop": [0.32, 0.0, 0.0],
-        "track": "ABU_F2.csv",
-        "pacejka_D": 2.0,
-    }
-    obj = pid_tracking.PID_Tracking(parameters)
-    result = obj.trajectory_tracking()
-    
-    list_in = range(3000, 4500, 100)
-    
-    pid_res = pid_parallel_run_lis(list_in, "Lissajous_circle_time")
-    pid_res_loose = pid_parallel_run_loose_lis(list_in, "Lissajous_circle_time")
-    mpc_res = mpc_parallel_run_lis(list_in, "Lissajous_circle_time")
-    deepc_res50, deepc_sig_50 = deepc_parallel_run_lis(list_in, "Lissajous_circle_time", 50)
-    deepc_res100, deepc_sig_100 = deepc_parallel_run_lis(list_in, "Lissajous_circle_time", 100)
-    deepc_res200, deepc_sig_200 = deepc_parallel_run_lis(list_in, "Lissajous_circle_time", 200)
-    deepc_res400, deepc_sig_400 = deepc_parallel_run_lis(list_in, "Lissajous_circle_time", 400)
-    
-    # Experiment plotting
-    fig, ax = plt.subplots()
-    plt.plot(list_in, pid_res, label="PID agressive", linestyle='--', color='black')
-    plt.plot(list_in, pid_res_loose, label="PID loose", linestyle='-.', color='black')
-    plt.plot(list_in, mpc_res, label="MPC", linestyle='--', color='red')
-    plt.plot(list_in, deepc_res50, label="DeePC, N=50", color=viridis(float(0.25)))
-    plt.fill_between(
-        list_in, 
-        [deepc_res50[ogni] - deepc_sig_50[ogni] for ogni in range(len(list_in))], 
-        [deepc_res50[ogni] + deepc_sig_50[ogni] for ogni in range(len(list_in))], 
-        alpha=0.3, 
-        color=viridis(0.25)
-    )
-    plt.plot(list_in, deepc_res100, label="DeePC, N=100", color=viridis(float(0.5)))
-    plt.fill_between(
-        list_in, 
-        [deepc_res100[ogni] - deepc_sig_100[ogni] for ogni in range(len(list_in))], 
-        [deepc_res100[ogni] + deepc_sig_100[ogni] for ogni in range(len(list_in))], 
-        alpha=0.3, 
-        color=viridis(0.5)
-    )
-    plt.plot(list_in, deepc_res200, label="DeePC, N=200", color=viridis(float(0.75)))
-    plt.fill_between(
-        list_in, 
-        [deepc_res200[ogni] - deepc_sig_200[ogni] for ogni in range(len(list_in))], 
-        [deepc_res200[ogni] + deepc_sig_200[ogni] for ogni in range(len(list_in))], 
-        alpha=0.3, 
-        color=viridis(0.75)
-    )
-    plt.plot(list_in, deepc_res400, label="DeePC, N=400", color=viridis(float(1.0)))
-    plt.fill_between(
-        list_in, 
-        [deepc_res400[ogni] - deepc_sig_400[ogni] for ogni in range(len(list_in))], 
-        [deepc_res400[ogni] + deepc_sig_400[ogni] for ogni in range(len(list_in))], 
-        alpha=0.3, 
-        color=viridis(1.0)
-    )
-    plt.xlabel("Lissajous total time, s")
-    plt.ylabel("RSS of tracking deviation per step, m")
-    #ax.set_yscale('log')
-    ax.set_yscale('symlog', linthresh=1e0)
-    #ax.set_xscale('log')
-    plt.legend()
-    plt.grid()
-    plt.title("Tracking error vs. trace difficulty")
-    plt.savefig(f"img/Circle_time.pdf")
-    print(f"Look at the picture: img/Circle_time.pdf")
-    
     
