@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/809755915.svg)](https://zenodo.org/doi/10.5281/zenodo.11515535)
+
 # Charts Generation for Research Paper
 
 This repository contains code to generate charts for the associated research paper. The code is designed to produce visual representations of data used in the paper, aiding in the presentation and analysis of research findings.
