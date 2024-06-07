@@ -186,7 +186,7 @@ class graph_compete(graph):
     def __generate_graphics(self, name: str = 'picture_at.png', animation: bool = False, moment: float = 100.0):
         if len(self.path) == 0:
             raise Exception("There is no path to plot.")
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(7, 4))
         for each in self.aux:
             if len(each[0]) != len(self.path[0][0]):
                 raise Exception("The aux charts must have the same length")
@@ -234,8 +234,9 @@ class graph_compete(graph):
             ax.set_xlim(self.xmin, self.xmax)
             ax.set_ylim(self.ymin, self.ymax)
             plt.axis('equal')
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
+            ax.set_xlabel('X, m')
+            ax.set_ylabel('Y, m')
+            plt.tight_layout(rect=[0, 0, 1, 0.98])
             ax.set_title(self.name)
             ax.grid()
             for each in self.path:

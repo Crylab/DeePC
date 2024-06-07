@@ -190,6 +190,7 @@ def nice_abu_dhabi_picture():
     visual.add_state_path(mpc_result, "red", 250, "MPC")
     visual.add_state_path(pid_result, "black", 500, "PID")
     visual.compression(10)
+    visual.transpose()
     visual.generate_pic_at("img/Nice_abu_dhabi.pdf", 80.0)
 
 
@@ -204,7 +205,7 @@ def abu_dhabi():
     None
     """
     list_in = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     pid_parameters = {
         "heading_loop": [2.0, 0.0, 0.0],
@@ -250,6 +251,8 @@ def abu_dhabi():
     plt.xlabel("Track peak attrition (Pacejka D)")
     plt.ylabel("RSS of tracking deviation per step, m")
     ax.set_yscale("symlog", linthresh=1e-1)
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    plt.xlim(0.8, 1.6)
     plt.legend()
     plt.grid()
     plt.title("Tires friction variation on Abu Dhabi circuit")
@@ -272,7 +275,7 @@ def circle_time():
     # Generating a range of values for circle time tracking.
 
     # Experiment plotting
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 4))
     # Creating subplots for the experiment.
 
     pid_parameters = {
@@ -340,7 +343,8 @@ def circle_time():
 
     ax.set_yscale("symlog", linthresh=1e0)
     # Setting y-axis scale.
-
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    plt.xlim(30, 44)
     plt.legend()
     plt.grid()
     plt.title("Tracking error vs. trace difficulty")
@@ -363,7 +367,7 @@ def ph_vs_ds():
     # Generating a list of values for prediction horizon.
 
     # Experiment plotting
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(7, 4))
     # Creating subplots for the experiment.
 
     N_list = [50, 100, 200, 400]
@@ -401,7 +405,8 @@ def ph_vs_ds():
 
     ax.set_yscale("symlog", linthresh=1e-1)
     # Setting y-axis scale.
-
+    plt.tight_layout(rect=[0, 0, 1, 0.98])
+    plt.xlim(20, 160)
     plt.legend()
     plt.grid()
     plt.title("DeePC: Dataset size (N) vs. prediction horizon")
