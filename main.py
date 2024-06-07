@@ -2,9 +2,10 @@
 # This line indicates that the script should be run using the Python interpreter.
 
 import sys
+
 # Importing the sys module to manipulate the Python runtime environment.
 
-sys.path.insert(1, 'source/')
+sys.path.insert(1, "source/")
 # Inserting 'source/' at position 1 in the sys.path list, to allow importing modules from this directory.
 
 import deepc_tracking
@@ -15,10 +16,12 @@ import numpy as np
 import multiprocessing
 import matplotlib.pyplot as plt
 from matplotlib import cm
+
 # Importing necessary modules for tracking algorithms, graph plotting, numerical operations, parallel processing, and visualization.
 
-viridis = cm.get_cmap('viridis', 12)
+viridis = cm.get_cmap("viridis", 12)
 # Getting the 'viridis' colormap with 12 discrete colors from the matplotlib colormap library.
+
 
 def run_experiment(dict_in: dict):
     """
@@ -39,6 +42,7 @@ def run_experiment(dict_in: dict):
     obj.trajectory_tracking()
     rss = obj.rss
     return rss
+
 
 def run_parallel(dict_in: dict, list_in: list, var_param: str, seeds: bool = False):
     """
@@ -65,13 +69,13 @@ def run_parallel(dict_in: dict, list_in: list, var_param: str, seeds: bool = Fal
                 param_list.append(local_local_param)
         else:
             param_list.append(local_param)
-    
+
     # Creating a pool of worker processes to run the experiments in parallel.
     pool = multiprocessing.Pool()
     execution_result = pool.map(run_experiment, param_list)
     pool.close()
     pool.join()
-    
+
     # Calculating average and standard deviation of the results.
     average_list = []
     sigma_list = []
@@ -85,14 +89,17 @@ def run_parallel(dict_in: dict, list_in: list, var_param: str, seeds: bool = Fal
             average = sum(seed_list) / len(seed_list)
             average_list.append(average)
             seed_average_nd = np.array(seed_list)
-            sigma = np.sqrt(sum(np.square(seed_average_nd - average)) / seed_average_nd.size)
+            sigma = np.sqrt(
+                sum(np.square(seed_average_nd - average)) / seed_average_nd.size
+            )
             sigma_list.append(sigma)
         else:
             average_list.append(execution_result[counter])
             counter += 1
             sigma_list.append(0)
-    
+
     return average_list, sigma_list
+
 
 def plot_line_shadow(list_in: list, res: tuple, linetype: str, color, name: str):
     """
@@ -110,12 +117,13 @@ def plot_line_shadow(list_in: list, res: tuple, linetype: str, color, name: str)
     """
     plt.plot(list_in, res[0], label=name, color=color, linestyle=linetype)
     plt.fill_between(
-        list_in, 
-        [res[0][ogni] - res[1][ogni] for ogni in range(len(list_in))], 
-        [res[0][ogni] + res[1][ogni] for ogni in range(len(list_in))], 
-        alpha=0.3, 
-        color=color
+        list_in,
+        [res[0][ogni] - res[1][ogni] for ogni in range(len(list_in))],
+        [res[0][ogni] + res[1][ogni] for ogni in range(len(list_in))],
+        alpha=0.3,
+        color=color,
     )
+
 
 def nice_abu_dhabi_picture():
     """
@@ -138,34 +146,34 @@ def nice_abu_dhabi_picture():
     }
     obj = pid_tracking.PID_Tracking(parameters)
     pid_result = obj.trajectory_tracking()
-    
+
     # DEEPC part
     parameters = {
-        'lambda_g': 5.0,
-        'lambda_y': [2e2] * 4,
-        'N': 100,
-        'track': "ABU_F2.csv",
-        'Q': [1, 1, 1, 100],
-        'R': [0.1, 0.1],
-        'prediction_horizon': 8,
-        'track_upper_bound': 100.0,
+        "lambda_g": 5.0,
+        "lambda_y": [2e2] * 4,
+        "N": 100,
+        "track": "ABU_F2.csv",
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "track_upper_bound": 100.0,
         "pacejka_D": 2.0,
     }
     obj = deepc_tracking.DEEPC_Tracking(parameters)
     deepc_result = obj.trajectory_tracking()
-    
+
     # MPC part
     parameters = {
-        'track': "ABU_F2.csv",
-        'Q': [1, 1, 1, 100],
-        'R': [0.1, 0.1],
-        'prediction_horizon': 8,
-        'track_upper_bound': 100.0,
+        "track": "ABU_F2.csv",
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "track_upper_bound": 100.0,
         "pacejka_D": 2.0,
     }
     obj = mpc_tracking.MPC_Tracking(parameters)
     mpc_result = obj.trajectory_tracking()
-    
+
     visual_params = {
         "name": "Abu Dhabi circuit",
         "xmin": -1000,
@@ -175,14 +183,15 @@ def nice_abu_dhabi_picture():
         "vehicle_length": 5,
         "vehicle_width": 2,
     }
-    
+
     visual = graph.graph_compete(visual_params)
     visual.add_state_path(deepc_result, "blue", 0, "DeePC")
-    visual.add_state_landscape(obj.trajectory, '--')
+    visual.add_state_landscape(obj.trajectory, "--")
     visual.add_state_path(mpc_result, "red", 250, "MPC")
     visual.add_state_path(pid_result, "black", 500, "PID")
     visual.compression(10)
-    visual.generate_pic_at('img/Nice_abu_dhabi.pdf', 80.0)
+    visual.generate_pic_at("img/Nice_abu_dhabi.pdf", 80.0)
+
 
 def abu_dhabi():
     """
@@ -196,52 +205,57 @@ def abu_dhabi():
     """
     list_in = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6]
     fig, ax = plt.subplots()
-    
+
     pid_parameters = {
         "heading_loop": [2.0, 0.0, 0.0],
         "velocity_loop": [3.0, 0.0, 0.0],
         "direction_loop": [0.1, 0.0, 0.0],
         "distance_loop": [0.1, 0.0, 0.0],
         "algorithm": "pid",
-        'track': "ABU_F2.csv",
+        "track": "ABU_F2.csv",
     }
     pid = run_parallel(pid_parameters, list_in, "pacejka_D")
-    plot_line_shadow(list_in, pid, '--', "black", "PID")
-    
+    plot_line_shadow(list_in, pid, "--", "black", "PID")
+
     mpc_parameters = {
-        'Q': [1, 1, 1, 100],
-        'R': [0.1, 0.1],
-        'prediction_horizon': 8,
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
         "algorithm": "mpc",
-        'track': "ABU_F2.csv",
+        "track": "ABU_F2.csv",
     }
     mpc_list_in = np.arange(0.8, 1.6, 0.002)
     mpc = run_parallel(mpc_parameters, mpc_list_in, "pacejka_D")
-    plot_line_shadow(mpc_list_in, mpc, '--', "red", "MPC")
-    
+    plot_line_shadow(mpc_list_in, mpc, "--", "red", "MPC")
+
     N_list = [50, 100, 200, 400]
     for i in range(4):
         deepc_parameters_update = {
-            'lambda_g': 5.0 * float(N_list[i]) / 100.0,
-            'lambda_y': [2e2] * 4,
-            'N': N_list[i],
-            "algorithm": "deepc"
+            "lambda_g": 5.0 * float(N_list[i]) / 100.0,
+            "lambda_y": [2e2] * 4,
+            "N": N_list[i],
+            "algorithm": "deepc",
         }
         deepc_parameters = mpc_parameters.copy()
         deepc_parameters.update(deepc_parameters_update)
         deepc = run_parallel(deepc_parameters, list_in, "pacejka_D", True)
-        plot_line_shadow(list_in, deepc, '-', viridis(float
+        plot_line_shadow(
+            list_in,
+            deepc,
+            "-",
+            viridis(float(i / len(N_list))),
+            "DeePC, N=" + str(N_list[i]),
+        )
 
-(i / len(N_list))), "DeePC, N=" + str(N_list[i]))
-    
     plt.xlabel("Track peak attrition (Pacejka D)")
     plt.ylabel("RSS of tracking deviation per step, m")
-    ax.set_yscale('symlog', linthresh=1e-1)
+    ax.set_yscale("symlog", linthresh=1e-1)
     plt.legend()
     plt.grid()
     plt.title("Tires friction variation on Abu Dhabi circuit")
     plt.savefig(f"img/Abu_Dhabi_new.pdf")
     print(f"Look at the picture: img/Abu_Dhabi_new.pdf")
+
 
 def circle_time():
     """
@@ -267,29 +281,29 @@ def circle_time():
         "direction_loop": [0.1, 0.0, 0.0],
         "distance_loop": [0.1, 0.0, 0.0],
         "algorithm": "pid",
-        'save_folder': 'results_circle_time',
+        "save_folder": "results_circle_time",
     }
     # Setting parameters for PID tracking.
 
     pid = run_parallel(pid_parameters, list_in, "Lissajous_circle_time")
     # Running parallel experiments for PID tracking.
 
-    plot_line_shadow(list_print, pid, '--', "black", "PID")
+    plot_line_shadow(list_print, pid, "--", "black", "PID")
     # Plotting PID results.
 
     mpc_parameters = {
-        'Q': [1, 1, 1, 100],
-        'R': [0.1, 0.1],
-        'prediction_horizon': 8,
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
         "algorithm": "mpc",
-        'save_folder': 'results_circle_time',
+        "save_folder": "results_circle_time",
     }
     # Setting parameters for MPC tracking.
 
     mpc = run_parallel(mpc_parameters, list_in, "Lissajous_circle_time")
     # Running parallel experiments for MPC tracking.
 
-    plot_line_shadow(list_print, mpc, '--', "red", "MPC")
+    plot_line_shadow(list_print, mpc, "--", "red", "MPC")
     # Plotting MPC results.
 
     N_list = [50, 100, 200, 400]
@@ -297,10 +311,10 @@ def circle_time():
 
     for i in range(4):
         deepc_parameters_update = {
-            'lambda_g': 5.0 * float(N_list[i]) / 100.0,
-            'lambda_y': [2e2] * 4,
-            'N': N_list[i],
-            "algorithm": "deepc"
+            "lambda_g": 5.0 * float(N_list[i]) / 100.0,
+            "lambda_y": [2e2] * 4,
+            "N": N_list[i],
+            "algorithm": "deepc",
         }
         # Updating parameters for DEEPC tracking.
 
@@ -311,14 +325,20 @@ def circle_time():
         deepc = run_parallel(deepc_parameters, list_in, "Lissajous_circle_time", True)
         # Running parallel experiments for DEEPC tracking.
 
-        plot_line_shadow(list_print, deepc, '-', viridis(float(i / len(N_list))), "DeePC, N=" + str(N_list[i]))
+        plot_line_shadow(
+            list_print,
+            deepc,
+            "-",
+            viridis(float(i / len(N_list))),
+            "DeePC, N=" + str(N_list[i]),
+        )
         # Plotting DEEPC results.
 
     plt.xlabel("Lissajous total time, s")
     plt.ylabel("RSS of tracking deviation per step, m")
     # Setting labels for x and y axes.
 
-    ax.set_yscale('symlog', linthresh=1e0)
+    ax.set_yscale("symlog", linthresh=1e0)
     # Setting y-axis scale.
 
     plt.legend()
@@ -326,6 +346,7 @@ def circle_time():
     plt.title("Tracking error vs. trace difficulty")
     plt.savefig(f"img/Circle_time_new.pdf")
     print(f"Look at the picture: img/Circle_time_new.pdf")
+
 
 def ph_vs_ds():
     """
@@ -350,29 +371,35 @@ def ph_vs_ds():
 
     for i in range(4):
         deepc_parameters = {
-            'Q': [1, 1, 1, 100],
-            'R': [0.1, 0.1],
-            'prediction_horizon': 8,
-            'lambda_g': 5.0 * float(N_list[i]) / 100.0,
-            'lambda_y': [2e2] * 4,
-            'N': N_list[i],
+            "Q": [1, 1, 1, 100],
+            "R": [0.1, 0.1],
+            "prediction_horizon": 8,
+            "lambda_g": 5.0 * float(N_list[i]) / 100.0,
+            "lambda_y": [2e2] * 4,
+            "N": N_list[i],
             "algorithm": "deepc",
             "Lissajous_circle_time": 4500,
-            'save_folder': 'results_ph_ds',
+            "save_folder": "results_ph_ds",
         }
         # Setting parameters for DEEPC tracking.
 
         deepc = run_parallel(deepc_parameters, list_in, "prediction_horizon", True)
         # Running parallel experiments for DEEPC tracking.
 
-        plot_line_shadow(list_print, deepc, '-', viridis(float(i / len(N_list))), "DeePC, N=" + str(N_list[i]))
+        plot_line_shadow(
+            list_print,
+            deepc,
+            "-",
+            viridis(float(i / len(N_list))),
+            "DeePC, N=" + str(N_list[i]),
+        )
         # Plotting DEEPC results.
 
     plt.xlabel("Prediction horizon, ms")
     plt.ylabel("RSS of tracking deviation per step, m")
     # Setting labels for x and y axes.
 
-    ax.set_yscale('symlog', linthresh=1e-1)
+    ax.set_yscale("symlog", linthresh=1e-1)
     # Setting y-axis scale.
 
     plt.legend()
@@ -380,7 +407,8 @@ def ph_vs_ds():
     plt.title("DeePC: Dataset size (N) vs. prediction horizon")
     plt.savefig(f"img/Ds_vs_ph.pdf")
     print(f"Look at the picture: img/Ds_vs_ph.pdf")
-    
+
+
 if __name__ == "__main__":
     # Execute the following functions when the script is run as the main program.
 
