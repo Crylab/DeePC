@@ -87,7 +87,7 @@ class MPC_Tracking(track.Abstrack_tracking):
         )
         yaw_0 = torch.tensor(self.model.state.heading).to(self.device)
 
-        relative_cost_threshold = 0.001  # Stop if improvement is less than 1%
+        relative_cost_threshold = 0.000001  # Stop if improvement is less than 1%
         previous_loss = float("inf")
 
         for iter in range(0, 200):

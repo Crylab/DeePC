@@ -225,9 +225,8 @@ def abu_dhabi():
         "algorithm": "mpc",
         "track": "ABU_F2.csv",
     }
-    mpc_list_in = np.arange(0.8, 1.6, 0.002)
-    mpc = run_parallel(mpc_parameters, mpc_list_in, "pacejka_D")
-    plot_line_shadow(mpc_list_in, mpc, "--", "red", "MPC")
+    mpc = run_parallel(mpc_parameters, list_in, "pacejka_D")
+    plot_line_shadow(list_in, mpc, "--", "red", "MPC")
 
     N_list = [50, 100, 200, 400]
     for i in range(4):
@@ -414,7 +413,7 @@ def ph_vs_ds():
     print(f"Look at the picture: img/Ds_vs_ph.pdf")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     # Execute the following functions when the script is run as the main program.
 
     ph_vs_ds()
