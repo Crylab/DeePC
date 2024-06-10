@@ -137,10 +137,10 @@ def nice_abu_dhabi_picture():
     """
     # PID part
     parameters = {
-        "heading_loop": [1.1, 0.0, 0.0],
-        "velocity_loop": [3.5, 0.0, 0.0],
-        "direction_loop": [0.7, 0.0, 0.0],
-        "distance_loop": [0.32, 0.0, 0.0],
+        "heading_loop": [10 ** 0.389, 0.0, 0.0],
+        "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+        "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+        "distance_loop": [10 ** -1.3539, 0.0, 0.0],
         "track": "ABU_F2.csv",
         "pacejka_D": 2.0,
     }
@@ -215,7 +215,15 @@ def abu_dhabi():
         "algorithm": "pid",
         "track": "ABU_F2.csv",
     }
-    pid = run_parallel(pid_parameters, list_in, "pacejka_D")
+    pid_parameters_tunned = {
+        "heading_loop": [10 ** 0.389, 0.0, 0.0],
+        "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+        "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+        "distance_loop": [10 ** -1.3539, 0.0, 0.0],
+        "algorithm": "pid",
+        "track": "ABU_F2.csv",
+    }
+    pid = run_parallel(pid_parameters_tunned, list_in, "pacejka_D")
     plot_line_shadow(list_in, pid, "--", "black", "PID")
 
     mpc_parameters = {
@@ -278,10 +286,10 @@ def circle_time():
     # Creating subplots for the experiment.
 
     pid_parameters = {
-        "heading_loop": [2.0, 0.0, 0.0],
-        "velocity_loop": [3.0, 0.0, 0.0],
-        "direction_loop": [0.1, 0.0, 0.0],
-        "distance_loop": [0.1, 0.0, 0.0],
+        "heading_loop": [10 ** 0.389, 0.0, 0.0],
+        "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+        "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+        "distance_loop": [10 ** -1.3539, 0.0, 0.0],
         "algorithm": "pid",
         "save_folder": "results_circle_time",
     }
@@ -413,11 +421,85 @@ def ph_vs_ds():
     print(f"Look at the picture: img/Ds_vs_ph.pdf")
 
 
-if __name__ == "__main__":    
+def one_step(vec):
+    """
+    Executes a series of experiments using PID parameters derived from the input vector and calculates a weighted sum of the results.
+
+    Arguments:
+    vec : array-like
+        A 1D array or list of four numerical values. These values are exponentiated and used as gains for different PID control loops.
+
+    Returns:
+    float
+        A single numerical value representing the weighted sum of the results from the experiments.
+    """
+    results = np.zeros(4)  # Initialize an array to store results of the experiments
+    weights = np.array([1, 5, 10, 200])  # Weights for each result
+    pid_parameters = {
+        "heading_loop": [10 ** vec[0], 0.0, 0.0],  # Gain for heading loop
+        "velocity_loop": [10 ** vec[1], 0.0, 0.0],  # Gain for velocity loop
+        "direction_loop": [10 ** vec[2], 0.0, 0.0],  # Gain for direction loop
+        "distance_loop": [10 ** vec[3], 0.0, 0.0],  # Gain for distance loop
+        "algorithm": "pid",
+        "save_folder": "tunning",
+        "Lissajous_circle_time": 4100,  # Initial value for Lissajous circle time
+    }
+    results[3] = run_experiment(pid_parameters)  # Run experiment and store result
+
+    # Update parameters for further experiments
+    pid_parameters.update(
+        {
+            "Lissajous_circle_time": 5000,  # New value for Lissajous circle time
+            "track": "ABU_F2.csv",  # Track file to use
+            "pacejka_D": 0.8,  # Pacejka coefficient
+        }
+    )
+    results[0] = run_experiment(pid_parameters)  # Run experiment and store result
+
+    pid_parameters.update({"pacejka_D": 1.2})  # Update Pacejka coefficient
+    results[1] = run_experiment(pid_parameters)  # Run experiment and store result
+
+    pid_parameters.update({"pacejka_D": 1.6})  # Update Pacejka coefficient
+    results[2] = run_experiment(pid_parameters)  # Run experiment and store result
+
+    return np.sum(results * weights)  # Calculate and return the weighted sum of results
+
+
+def pid_tunning():
+    """
+    Tunes PID parameters by running multiple experiments in parallel and finds the parameter set that produces the minimum result.
+
+    No arguments.
+
+    Prints:
+    The best parameter set (as a list) and the corresponding minimal result.
+    """
+    np.random.seed(1)  # Set random seed for reproducibility
+    cpu_n = 96 * 50  # Number of parameter sets to generate
+    param_list = [
+        np.random.uniform(-2, 1, 4) for _ in range(cpu_n)
+    ]  # Generate random parameter sets
+
+    pool = multiprocessing.Pool()  # Create a multiprocessing pool
+    execution_result = pool.map(
+        one_step, param_list
+    )  # Map 'one_step' function to each parameter set
+    pool.close()  # Close the pool
+    pool.join()  # Wait for all processes to complete
+
+    index = np.argmin(execution_result)  # Find the index of the minimum result
+    print(param_list[index])  # Print the best parameter set
+    print(execution_result[index])  # Print the minimal result
+
+
+if __name__ == "__main__":        
     # Execute the following functions when the script is run as the main program.
 
     ph_vs_ds()
     # Run the experiment for prediction horizon vs. dataset size tracking.
+    
+    pid_tunning()
+    # Run the algorithm for setting PID parameters
 
     circle_time()
     # Run the experiment for circle time tracking.

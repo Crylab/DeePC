@@ -12,4 +12,5 @@
 *.gif
 /results*
 /paper_chart*
+/tunning
 *.csv
