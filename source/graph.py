@@ -126,7 +126,7 @@ class graph_compete(graph):
         self.path = []
         self.landscape = []
 
-    def __add_path(self, path: np.array, color: str, shift: int = 0, name: str = 'Default'):
+    def add_path(self, path: np.array, color: str, shift: int = 0, name: str = 'Default'):
         self.path.append((path, color, shift, name))
         
     def add_state_path(self, states: list, color: str, shift: int = 0, name: str = 'Default'):
@@ -141,7 +141,7 @@ class graph_compete(graph):
             path.append([each.x, each.y])
         self.landscape.append((np.array(path), line_type))
 
-    def __add_landscape(self, path: np.array, line_type: str):
+    def add_landscape(self, path: np.array, line_type: str):
         self.landscape.append((path, line_type))
 
     def compression(self, degree: int):

@@ -491,8 +491,43 @@ def pid_tunning():
     print(param_list[index])  # Print the best parameter set
     print(execution_result[index])  # Print the minimal result
 
+def get_unstable_picture():
+    """
+    Generate picture of unstable behaviour of MPC on eight shape trajectory
 
-if __name__ == "__main__":        
+    Arguments:
+    None
+
+    Returns:
+    None
+    """
+    deepc = np.load("mpc-unstable/Lissajous-deepc400-64-1-ztTVm7R1mcDQ4IvEAyXoBwaa.npy")
+    pid = np.load("mpc-unstable/Lissajous-pid-60-5-3Gx0Z6KBTgzWEz97pQp3vwaa.npy")
+    mpc = np.load("mpc-unstable/Lissajous-mpc-64-1-y4JRN5wJsfbvuXglpDrWsQaa.npy")
+    trj = np.load("mpc-unstable/Lissajous-pid-60-5-3Gx0Z6KBTgzWEz97pQp3vwaa_.npy")
+
+    visual_params = {
+        "name": "∞-shaped trajectory tracking with unstable MPC",
+        "xmin": -100,
+        "ymin": -100,
+        "xmax": 150,
+        "ymax": 100,
+        "vehicle_length": 5,
+        "vehicle_width": 2,
+    }
+
+    visual = graph.graph_compete(visual_params)
+    visual.add_path(deepc, "blue", 0, "DeePC")
+    visual.add_landscape(trj, "--")
+    visual.add_path(mpc, "red", 0, "MPC")
+    visual.add_path(pid, "black", 0, "PID")
+    visual.compression(10)
+    visual.generate_pic_at("img/mpc_ustable.pdf", 25.0)
+
+
+if __name__ == "__main__":
+    get_unstable_picture()
+    exit()
     # Execute the following functions when the script is run as the main program.
 
     ph_vs_ds()
