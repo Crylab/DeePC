@@ -123,6 +123,7 @@ class graph:
 class graph_compete(graph):
     def __init__(self, params: dict = {}):
         super().__init__(params)
+        self.nice_pic = params['nice_pic'] if 'nice_pic' in params else True
         self.path = []
         self.landscape = []
 
@@ -186,7 +187,10 @@ class graph_compete(graph):
     def __generate_graphics(self, name: str = 'picture_at.png', animation: bool = False, moment: float = 100.0):
         if len(self.path) == 0:
             raise Exception("There is no path to plot.")
-        fig, ax = plt.subplots(figsize=(7, 4))
+        if self.nice_pic:
+            fig, ax = plt.subplots(figsize=(7, 4))
+        else:
+            fig, ax = plt.subplots()
         for each in self.aux:
             if len(each[0]) != len(self.path[0][0]):
                 raise Exception("The aux charts must have the same length")
@@ -236,8 +240,11 @@ class graph_compete(graph):
             plt.axis('equal')
             ax.set_xlabel('X, m')
             ax.set_ylabel('Y, m')
-            plt.tight_layout(rect=[0, 0, 1, 0.98])
-            ax.set_title(self.name)
+            if self.nice_pic:
+                plt.tight_layout(rect=[0, 0, 1, 0.98])
+                ax.set_title(self.name)
+            else:
+                ax.set_title(self.name, fontsize=10)
             ax.grid()
             for each in self.path:
                 if frame > each[2]:

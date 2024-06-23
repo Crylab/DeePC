@@ -84,7 +84,7 @@ class Abstrack_tracking(ABC):
                 delta=self.parameters['Lissajous_phase'],
             )
         else:
-            trajectory = self.__import_trajectory(self.parameters['track'])
+            trajectory = self._import_trajectory(self.parameters['track'])
         
         trajectory_cutted = self.__cut_trajectory(
             trajectory,
@@ -92,7 +92,7 @@ class Abstrack_tracking(ABC):
             self.parameters['track_upper_bound'],
         )
         
-        self.__set_trajectory(trajectory_cutted)
+        self._set_trajectory(trajectory_cutted)
         
         self.state = Tracking_state()
 
@@ -130,7 +130,7 @@ class Abstrack_tracking(ABC):
             trajectory[1][t] = radius * np.sin(b * time_var)
         return np.array(trajectory)
         
-    def __set_trajectory(self, trajectory):
+    def _set_trajectory(self, trajectory):
         if len(trajectory) != 2:  # X and Y
             self.state.set_error('Reference trajectory must content X and Y')
         if len(trajectory[0]) < self.INITIAL_HORIZON + self.PREDICTION_HORIZON:
@@ -183,7 +183,7 @@ class Abstrack_tracking(ABC):
         trajectory_out = trajectory.T[lower_int:upper_int].T
         return trajectory_out
     
-    def __import_trajectory(self, file_path: str) -> np.ndarray:
+    def _import_trajectory(self, file_path: str) -> np.ndarray:
         """
         Import a trajectory from a file.
 
