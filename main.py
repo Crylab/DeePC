@@ -283,8 +283,8 @@ def circle_time():
 
     # Experiment plotting
     fig, ax = plt.subplots(figsize=(7, 4))
-    gradient = np.logspace(0, np.log10(50), 50).reshape(1, -1)
-    plt.imshow(gradient , extent=[10, 40, 0, 30], aspect='auto', cmap='hot', alpha=0.8)
+    gradient = np.logspace(0, np.log10(5000), 5000).reshape(1, -1)
+    plt.imshow(gradient , extent=[-5, 40, 0, 30], aspect='auto', cmap='hot', alpha=0.8)
     # Creating subplots for the experiment.
 
     pid_parameters = {
