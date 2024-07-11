@@ -283,6 +283,8 @@ def circle_time():
 
     # Experiment plotting
     fig, ax = plt.subplots(figsize=(7, 4))
+    gradient = np.logspace(0, np.log10(50), 50).reshape(1, -1)
+    plt.imshow(gradient , extent=[10, 40, 0, 30], aspect='auto', cmap='hot', alpha=0.8)
     # Creating subplots for the experiment.
 
     pid_parameters = {
@@ -527,8 +529,7 @@ def get_unstable_picture():
 
 if __name__ == "__main__":
     get_unstable_picture()
-    exit()
-    # Execute the following functions when the script is run as the main program.
+    # Deomnstrate unstable behaviour
 
     ph_vs_ds()
     # Run the experiment for prediction horizon vs. dataset size tracking.
