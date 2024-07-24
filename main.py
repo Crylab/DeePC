@@ -353,6 +353,9 @@ def circle_time():
     ax.set_yscale("symlog", linthresh=1e0)
     # Setting y-axis scale.
     plt.tight_layout(rect=[0, 0, 1, 0.98])
+    plt.axhline(y = 3, color = 'k', linestyle='-')
+    plt.text(39, 3.125, '↑ Unacceptable performance')
+    plt.text(39, 2.4, '↓ Acceptable performance')
     plt.xlim(30, 44)
     plt.legend()
     plt.grid()
