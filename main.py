@@ -529,8 +529,211 @@ def get_unstable_picture():
     visual.compression(10)
     visual.generate_pic_at("img/mpc_ustable.pdf", 25.0)
 
+def animation1():
+    print("Animation generation")
+    # Graphical part
+    visual_params = {
+        "name": "∞-shape tracking with laptime limit",
+        "xmin": -110,
+        "ymin": -110,
+        "xmax": 110,
+        "ymax": 110,
+        "vehicle_length": 5,
+        "vehicle_width": 2,
+    }
+    
+    animation_obj = graph.graph_compete(visual_params)
+    counter = 0
+    
+    colormap = {
+        4500: '#FAE755',        
+        4250: '#A3D65A',
+        4000: '#56AC82',
+        3750: '#48948B',
+        3500: '#417B8C',
+        3250: '#404884',
+        3000: '#3E1350',
+    }
+    
+    for i in [4500, 4250, 4000, 3750, 3500, 3250, 3000]:
+        pid_parameters = {
+            "heading_loop": [10 ** 0.389, 0.0, 0.0],
+            "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+            "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+            "distance_loop": [10 ** -1.3539, 0.0, 0.0],
+            "algorithm": "pid",
+            "save_folder": "results_animation",
+            "Lissajous_circle_time": i,
+        }
+
+        # Setting parameters for DEEPC tracking.
+        obj = pid_tracking.PID_Tracking(pid_parameters)
+        temp = obj.trajectory_tracking()
+        animation_obj.add_state_path(temp, colormap[i], shift= int((4500-i)/10), name=str(int(i/100))+'s.')
+        counter += 1
+    
+    animation_obj.add_state_landscape(obj.trajectory)
+    animation_obj.compression(10)
+    animation_obj.generate_gif(name='img/Animation1.gif')
+    
+def animation2():
+    print("Animation generation")
+    deepc = np.load("mpc-unstable/Lissajous-deepc400-64-1-ztTVm7R1mcDQ4IvEAyXoBwaa.npy")
+    pid = np.load("mpc-unstable/Lissajous-pid-60-5-3Gx0Z6KBTgzWEz97pQp3vwaa.npy")
+    mpc = np.load("mpc-unstable/Lissajous-mpc-64-1-y4JRN5wJsfbvuXglpDrWsQaa.npy")
+    trj = np.load("mpc-unstable/Lissajous-pid-60-5-3Gx0Z6KBTgzWEz97pQp3vwaa_.npy")
+
+    visual_params = {
+        "name": "∞-shaped trajectory tracking with unstable MPC",
+        "xmin": 0,
+        "ymin": 0,
+        "xmax": 150,
+        "ymax": 110,
+        "vehicle_length": 5,
+        "vehicle_width": 2,
+    }
+
+    visual = graph.graph_compete(visual_params)
+    visual.add_path(deepc, "blue", 0, "DeePC")
+    visual.add_landscape(trj, "--")
+    visual.add_path(mpc, "red", 0, "MPC")
+    visual.add_path(pid, "black", 0, "PID")
+    visual.compression(2)
+    visual.generate_gif(name="img/mpc_ustable.gif")
+    
+def animation3():
+    print("Animation generation")
+    
+    # PID part
+    pid_parameters_tunned = {
+        "heading_loop": [10 ** 0.389, 0.0, 0.0],
+        "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+        "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+        "distance_loop": [10 ** -1.3539, 0.0, 0.0],
+        "pacejka_D": 1.6,
+        "algorithm": "pid",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    pid_obj = pid_tracking.PID_Tracking(pid_parameters_tunned)
+    pid_result = pid_obj.trajectory_tracking()
+    trj = pid_obj.trajectory
+    
+    mpc_parameters = {
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "pacejka_D": 1.6,
+        "algorithm": "mpc",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    mpc_obj = mpc_tracking.MPC_Tracking(mpc_parameters)
+    mpc_result = mpc_obj.trajectory_tracking()
+    
+    deepc_parameters_update = {
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "pacejka_D": 1.6,
+        "lambda_g": 5.0 * float(400) / 100.0,
+        "lambda_y": [2e2] * 4,
+        "N": 400,
+        "algorithm": "deepc",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    deepc_obj = deepc_tracking.DEEPC_Tracking(deepc_parameters_update)
+    deepc_result = deepc_obj.trajectory_tracking()
+    
+    visual_params = {
+        "name": "Yas Marina Circuit",
+        "xmin": -500,
+        "ymin": -1000,
+        "xmax": 500,
+        "ymax": 1000,
+        "vehicle_length": 5,
+        "vehicle_width": 2,
+    }
+    
+    visual = graph.graph_compete(visual_params)
+    visual.add_state_path(deepc_result, "blue", 0, "DeePC")
+    visual.add_state_landscape(trj, "--")
+    visual.add_state_path(mpc_result, "red", 0, "MPC")
+    visual.add_state_path(pid_result, "black", 0, "PID")
+    visual.compression(10)
+    visual.generate_gif(name="img/abu_dhabi.gif")
+    
+def animation4():
+    print("Animation generation")
+    
+    # PID part
+    pid_parameters_tunned = {
+        "heading_loop": [10 ** 0.389, 0.0, 0.0],
+        "velocity_loop": [10 ** 0.8621, 0.0, 0.0],
+        "direction_loop": [10 ** -0.5181, 0.0, 0.0],
+        "distance_loop": [10 ** -1.3539, 0.0, 0.0],
+        "pacejka_D": 1.6,
+        "algorithm": "pid",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    pid_obj = pid_tracking.PID_Tracking(pid_parameters_tunned)
+    pid_result = pid_obj.trajectory_tracking()
+    trj = pid_obj.trajectory
+    
+    mpc_parameters = {
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "pacejka_D": 1.6,
+        "algorithm": "mpc",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    mpc_obj = mpc_tracking.MPC_Tracking(mpc_parameters)
+    mpc_result = mpc_obj.trajectory_tracking()
+    
+    deepc_parameters_update = {
+        "Q": [1, 1, 1, 100],
+        "R": [0.1, 0.1],
+        "prediction_horizon": 8,
+        "pacejka_D": 1.6,
+        "lambda_g": 5.0 * float(400) / 100.0,
+        "lambda_y": [2e2] * 4,
+        "N": 400,
+        "algorithm": "deepc",
+        "save_folder": "results_animation",
+        "track": "ABU_F2.csv",
+    }
+    deepc_obj = deepc_tracking.DEEPC_Tracking(deepc_parameters_update)
+    deepc_result = deepc_obj.trajectory_tracking()
+    
+    visual_params = {
+        "name": "Yas Marina Circuit",
+        "xwin": 225,
+        "ywin": 100,
+        "vehicle_length": 5,
+        "vehicle_width": 2,
+    }
+    
+    visual = graph.graph_follow(visual_params)
+    visual.add_state_path(deepc_result, "blue", 0, "DeePC")
+    visual.add_state_landscape(trj, "--")
+    visual.add_state_path(mpc_result, "red", 0, "MPC")
+    visual.add_state_path(pid_result, "black", 0, "PID")
+    visual.compression(10)
+    visual.generate_gif(name="img/abu_dhabi_close.gif")
 
 if __name__ == "__main__":
+    # Animations for presentation
+    if False:
+        animation1()
+        animation2()
+        animation3()
+        animation4()
+        exit()
+    
     get_unstable_picture()
     # Deomnstrate unstable behaviour
 
