@@ -136,7 +136,7 @@ class graph_compete(graph):
             path.append([each.x, each.y, each.heading])
         self.path.append((np.array(path), color, shift, name))
         
-    def add_state_landscape(self, states: list, line_type: str):
+    def add_state_landscape(self, states: list, line_type: str = '--'):
         path = []
         for each in states:
             path.append([each.x, each.y])
@@ -183,6 +183,10 @@ class graph_compete(graph):
         temp = self.landscape[0][0].T[0].copy()
         self.landscape[0][0].T[0] = self.landscape[0][0].T[1].copy()
         self.landscape[0][0].T[1] = temp
+        
+    def moving_win(seif, position: any):
+        # For "follow" child class
+        pass
         
     def __generate_graphics(self, name: str = 'picture_at.png', animation: bool = False, moment: float = 100.0):
         if len(self.path) == 0:
@@ -235,9 +239,11 @@ class graph_compete(graph):
 
         def update(frame):
             ax.clear()
-            ax.set_xlim(self.xmin, self.xmax)
-            ax.set_ylim(self.ymin, self.ymax)
-            plt.axis('equal')
+            limits = plt.axis('equal')
+            self.moving_win(self.path[0][0][frame])
+            ax.set_xlim(self.xmin, self.xmax, auto=False)
+            ax.set_ylim(self.ymin, self.ymax, auto=False)
+            
             ax.set_xlabel('X, m')
             ax.set_ylabel('Y, m')
             if self.nice_pic:
@@ -248,7 +254,7 @@ class graph_compete(graph):
             ax.grid()
             for each in self.path:
                 if frame > each[2]:
-                    if frame < len(each[0]):
+                    if frame < len(each[0])+each[2]:
                         plot_vehicle(ax, *each[0][frame-each[2]], each[1], each[3])
                         plot_path(ax, each[0], frame-each[2], each[1])
                     else:
@@ -264,19 +270,33 @@ class graph_compete(graph):
                 plot_aux(ax, each[0], each[1])
             ax.legend()
         frames = len(self.path[0][0])
-        for each in self.path:
-            frames += each[2]
         if animation:
             ani = FuncAnimation(fig, update, frames=frames,
                                 interval=0, repeat=False)
-            ani.save(name, writer='pillow', fps=24)
+            ani.save(name, writer='pillow', fps=24, dpi=300)
         else:
             moment_at = int(float(len(self.path[0][0])) * moment / 100.0)
             update(moment_at)
-            plt.savefig(name)
+            plt.savefig(name)           
         
     def generate_gif(self, name: str = 'vehicle_animation.gif'):
         self.__generate_graphics(name, True)
         
     def generate_pic_at(self, name: str = 'picture_at.png', moment: float = 100.0):
         self.__generate_graphics(name, False, moment)
+
+class graph_follow(graph_compete):
+    def __init__(self, params: dict = {}):
+        super().__init__(params)
+        self.xwin = params['xwin'] if 'xwin' in params else 100
+        self.ywin = params['ywin'] if 'ywin' in params else 100
+        
+    def moving_win(self, position: any):
+        center_x = position[0]
+        center_y = position[1]
+        self.xmin = center_x - (self.xwin / 2)
+        self.xmax = center_x + (self.xwin / 2)
+        self.ymin = center_y - (self.ywin / 2)
+        self.ymax = center_y + (self.ywin / 2)
+        
+        
