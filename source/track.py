@@ -84,7 +84,7 @@ class Abstrack_tracking(ABC):
                 delta=self.parameters['Lissajous_phase'],
             )
         else:
-            trajectory = self._import_trajectory(self.parameters['track'])
+            trajectory = self._import_trajectory(self.parameters['save_folder']+'/'+self.parameters['track'])
         
         trajectory_cutted = self.__cut_trajectory(
             trajectory,
@@ -258,6 +258,9 @@ class Abstrack_tracking(ABC):
         s = str(id).strip().replace(" ", "_")
         file_name = re.sub(r"(?u)[^-\w.]", "", s)
         return file_name
+
+    def get_hash(self) -> str:
+            return self.__hash_generator()
     
     def __save_result(self, result: list, rss: float, time: float) -> None:
         # Save the result to numpy file and self.parameters to json file
@@ -281,10 +284,11 @@ class Abstrack_tracking(ABC):
         if self.state.is_error():
             metadata['error'] = self.state.error
         
-        self.parameters.update(metadata)
+        local_parameters = copy.copy(self.parameters)
+        local_parameters.update(metadata)
         
         with open(file_path + '.json', 'w+') as f:
-            json.dump(self.parameters, f)
+            json.dump(local_parameters, f)
             
     def __is_simulation_exist(self) -> bool:
         file_name = self.__hash_generator()
