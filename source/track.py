@@ -354,6 +354,11 @@ class Abstrack_tracking(ABC):
                 print(colored('Action: ', 'green'), colored(action, 'white'))
             
             racecar_step_after = self.model.Step(action)
+
+            deviation = self.reference_states[0].get_numpy() - racecar_step_after.get_numpy()
+            if np.sqrt((deviation[0] ** 2 + deviation[1] ** 2)) > self.parameters['max_tracking_error']:
+                self.state.set_error('Tracking error is too high')
+                break
             
             if self.parameters['print_out'] == 'Everything':
                 print(colored('State after: ', 'green'), colored(racecar_step_after, 'white'))
