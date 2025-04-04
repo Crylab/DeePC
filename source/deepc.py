@@ -50,6 +50,7 @@ class DeepC:
         self.init_cond_exists = False
         self.reference_exists = False
         self.criteria_exists = False
+        self.inputs_limited = False
 
     def set_pred_horiz(self, new_horiz: int = 2):
         """
@@ -308,7 +309,9 @@ class DeepC:
         if not self.reference_exists:
             raise Exception("Attempt to solve the problem without reference")
         if not self.criteria_exists:
-            raise Exception("Attempt to solve the problem without criteria")
+            raise Exception("Attempt to solve the problem without criteria")        
+        if not self.inputs_limited:
+            raise Exception("Attempt to solve the problem without input limits")
 
         A0 = -1.0 * np.identity(self.channels * self.finish_length)
         B0 = np.zeros((self.channels * self.init_length,
@@ -324,11 +327,30 @@ class DeepC:
 
         B1 = np.concatenate((self.H, A1, A3))
 
-        C1 = np.concatenate(
+        G0 = np.zeros((self.n_inputs * self.finish_length,
+                       self.N))
+        G1 = -1.0 * np.identity(self.n_inputs * self.finish_length)
+        G2 = np.zeros((self.n_inputs * self.finish_length,
+                       (self.n_outputs * self.finish_length) + (self.n_outputs * self.init_length)))
+        
+        G3 = np.concatenate((G0, G1, G2), axis=1)
+        B1 = np.concatenate((B1.T, G3))
+
+        C_min = np.concatenate(
             (
                 np.concatenate(self.input_init),
                 np.concatenate(self.output_init),
                 np.zeros(self.channels * self.finish_length),
+                np.array(self.input_min),
+            )
+        )
+
+        C_max = np.concatenate(
+            (
+                np.concatenate(self.input_init),
+                np.concatenate(self.output_init),
+                np.zeros(self.channels * self.finish_length),
+                np.array(self.input_max),
             )
         )
 
@@ -376,8 +398,8 @@ class DeepC:
 
         self.solver = osqp.OSQP()
         D0_sparse = sparse.csc_matrix(D0)
-        B1_sparse = sparse.csc_matrix(B1.T)
-        self.solver.setup(D0_sparse, E0, B1_sparse, C1, C1, verbose=False)
+        B1_sparse = sparse.csc_matrix(B1)
+        self.solver.setup(D0_sparse, E0, B1_sparse, C_min, C_max, verbose=False)
         results = self.solver.solve()
         if results.info.status_val != 1:
             return None
@@ -405,3 +427,15 @@ class DeepC:
                 self.N + (input_iter * self.finish_length) : self.N + ((input_iter + 1) * self.finish_length)
             ]
         return solution
+
+    def set_limits(self, limits_min, limits_max):
+        if len(limits_min) != self.n_inputs:
+            raise Exception("Init.cond. must contain n_inputs channels")
+        if len(limits_max) != self.n_inputs:
+            raise Exception("Init.cond. must contain n_inputs channels")
+        self.input_min = []
+        self.input_max = []
+        for i in range(self.n_inputs):
+            self.input_min += [limits_min[i]] * self.finish_length
+            self.input_max += [limits_max[i]] * self.finish_length
+        self.inputs_limited = True

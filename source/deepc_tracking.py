@@ -35,6 +35,8 @@ class DEEPC_Tracking(track.Abstrack_tracking):
 
         self.deepc = deepc.DeepC(self.parameters)
         self.deepc.set_opt_criteria(self.parameters.copy())
+        self.max_steering_angle = self.parameters["max_steering_angle"]
+        self.deepc.set_limits([-1.0, -self.max_steering_angle], [1.0, self.max_steering_angle])
 
     def __random_experiment(self, seed):
         """
