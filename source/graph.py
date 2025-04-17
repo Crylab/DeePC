@@ -184,7 +184,7 @@ class graph_compete(graph):
         self.landscape[0][0].T[0] = self.landscape[0][0].T[1].copy()
         self.landscape[0][0].T[1] = temp
         
-    def moving_win(seif, position: any):
+    def moving_win(seif, frame: int):
         # For "follow" child class
         pass
         
@@ -240,7 +240,7 @@ class graph_compete(graph):
         def update(frame):
             ax.clear()
             limits = plt.axis('equal')
-            self.moving_win(self.path[0][0][frame])
+            self.moving_win(frame)
             ax.set_xlim(self.xmin, self.xmax, auto=False)
             ax.set_ylim(self.ymin, self.ymax, auto=False)
             
@@ -252,6 +252,7 @@ class graph_compete(graph):
             else:
                 ax.set_title(self.name, fontsize=10)
             ax.grid()
+            ax.use_sticky_edges = False
             for each in self.path:
                 if frame > each[2]:
                     if frame < len(each[0])+each[2]:
@@ -291,12 +292,47 @@ class graph_follow(graph_compete):
         self.xwin = params['xwin'] if 'xwin' in params else 100
         self.ywin = params['ywin'] if 'ywin' in params else 100
         
-    def moving_win(self, position: any):
+    def moving_win(self, frame: int):
+        position = self.path[0][0][frame]
         center_x = position[0]
         center_y = position[1]
         self.xmin = center_x - (self.xwin / 2)
         self.xmax = center_x + (self.xwin / 2)
         self.ymin = center_y - (self.ywin / 2)
         self.ymax = center_y + (self.ywin / 2)
+
+class graph_swarm(graph_follow):
+
+    def moving_win(self, frame: int):
+        x_list = []
+        y_list = []
+        for each in self.path:
+            if frame >= each[2]:
+                if frame < len(each[0])+each[2]:
+                    local_x = each[0][frame-each[2]][0]
+                    local_y = each[0][frame-each[2]][1]
+                    x_list.append(local_x)
+                    y_list.append(local_y)
+        
+        center_x = sum(x_list) / len(x_list)
+        center_y = sum(y_list) / len(y_list)
+        xmin_local = center_x - (self.xwin / 2)
+        xmax_local = center_x + (self.xwin / 2)
+        ymin_local = center_y - (self.ywin / 2)
+        ymax_local = center_y + (self.ywin / 2)
+
+        if xmin_local > min(x_list):
+            xmin_local = min(x_list)
+        if xmax_local < max(x_list):
+            xmax_local = max(x_list)
+        if ymin_local > min(y_list):
+            ymin_local = min(y_list)
+        if ymax_local < max(y_list):
+            ymax_local = max(y_list)
+        
+        self.xmin = (xmin_local + self.xmin*3) / 4.0
+        self.xmax = (xmax_local + self.xmax*3) / 4.0
+        self.ymin = (ymin_local + self.ymin*3) / 4.0
+        self.ymax = (ymax_local + self.ymax*3) / 4.0
         
         
