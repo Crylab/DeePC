@@ -329,7 +329,7 @@ class DeepC:
 
         G0 = np.zeros((self.n_inputs * self.finish_length,
                        self.N))
-        G1 = -1.0 * np.identity(self.n_inputs * self.finish_length)
+        G1 = np.identity(self.n_inputs * self.finish_length)
         G2 = np.zeros((self.n_inputs * self.finish_length,
                        (self.n_outputs * self.finish_length) + (self.n_outputs * self.init_length)))
         
