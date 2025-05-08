@@ -48,7 +48,7 @@ class DEEPC_Tracking(track.Abstrack_tracking):
         Returns:
             None
         """
-        np.random.seed(seed)
+        rng = np.random.default_rng(seed)
         dataset_inputs = []
         dataset_outputs = []
         trials = 0
@@ -57,15 +57,15 @@ class DEEPC_Tracking(track.Abstrack_tracking):
 
         while trials < self.parameters["N"]:
             initial_state = model.Racecar_State()
-            initial_state.speed = np.random.uniform(
+            initial_state.speed = rng.uniform(
                 self.parameters["vel_min"],
                 self.parameters["vel_max"],
             )
             self.model.Initialization(initial_state)
 
             action = model.Racecar_Action(
-                np.random.uniform(-1.0, 1.0),
-                np.random.uniform(
+                rng.uniform(-1.0, 1.0),
+                rng.uniform(
                     -self.parameters["max_steering_angle"],
                     self.parameters["max_steering_angle"],
                 ),
@@ -84,8 +84,8 @@ class DEEPC_Tracking(track.Abstrack_tracking):
                     break
 
                 action = model.Racecar_Action(
-                    np.random.uniform(-1.0, 1.0),
-                    np.random.uniform(
+                    rng.uniform(-1.0, 1.0),
+                    rng.uniform(
                         -self.parameters["max_steering_angle"],
                         self.parameters["max_steering_angle"],
                     ),
