@@ -301,7 +301,7 @@ class Abstrack_tracking(ABC):
             file_path = self.parameters['save_folder'] + '/' + file_name + '.json'
             with open(file_path, 'r') as f:
                 metadata = json.load(f)
-            return metadata['rss']
+            return metadata['rss'], metadata['state']
         else:
             return None
     
@@ -312,7 +312,11 @@ class Abstrack_tracking(ABC):
                 print(colored('Trajectory tracking: ', 'green'), colored('Suspended', 'white'))
                 print(colored('Simulation is already done!', 'white'))
                 result = self.__restore_result(self.__hash_generator() + '.npy')
-                self.rss = self.get_rss()
+                self.rss, state = self.get_rss()
+                if state == "Error":
+                    self.state.set_error('Simulation is already done with error')
+                else:
+                    self.state.set_state(state)
             return result
         
         self.state.set_state("Tracking")
