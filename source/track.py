@@ -42,7 +42,6 @@ class Abstrack_tracking(ABC):
         self.past_actions = []
         self.reference_states = []
         self.algorithm = None
-        self.force_simulation = False
         
         if True:
             # Initialize the parameters
@@ -62,6 +61,7 @@ class Abstrack_tracking(ABC):
             self.set_default_parameters(parameters, 'dt', 0.01)
             self.set_default_parameters(parameters, 'print_out', 'Computation')
             self.set_default_parameters(parameters, 'save_folder', 'results')
+            self.set_default_parameters(parameters, 'force_simulation', False)
             
         # Horizon parameters
         self.INITIAL_HORIZON = self.parameters['initial_horizon']
@@ -292,7 +292,7 @@ class Abstrack_tracking(ABC):
             json.dump(local_parameters, f)
             
     def __is_simulation_exist(self) -> bool:
-        if self.force_simulation:
+        if self.parameters['force_simulation']:
             return False
         file_name = self.__hash_generator()
         file_path = self.parameters['save_folder'] + '/' + file_name
