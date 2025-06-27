@@ -42,6 +42,7 @@ class Abstrack_tracking(ABC):
         self.past_actions = []
         self.reference_states = []
         self.algorithm = None
+        self.force_simulation = False
         
         if True:
             # Initialize the parameters
@@ -291,6 +292,8 @@ class Abstrack_tracking(ABC):
             json.dump(local_parameters, f)
             
     def __is_simulation_exist(self) -> bool:
+        if self.force_simulation:
+            return False
         file_name = self.__hash_generator()
         file_path = self.parameters['save_folder'] + '/' + file_name
         return os.path.exists(file_path + '.json')   
@@ -332,6 +335,7 @@ class Abstrack_tracking(ABC):
         self.model.Initialization(self.past_states[-1])    
                 
         result = []
+        self.result_action = []
         
         total_time = len(self.trajectory) - self.INITIAL_HORIZON - self.PREDICTION_HORIZON
         
@@ -368,6 +372,7 @@ class Abstrack_tracking(ABC):
                 print(colored('State after: ', 'green'), colored(racecar_step_after, 'white'))
             
             result.append(racecar_step_after.copy())
+            self.result_action.append(action.copy())
             self.past_states = self.__winshift(self.past_states, racecar_step_after)
             self.past_actions = self.__winshift(self.past_actions, action)
             self.reference_states = self.__winshift(self.reference_states, self.trajectory[t+self.PREDICTION_HORIZON])
