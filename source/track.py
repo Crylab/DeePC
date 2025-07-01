@@ -261,13 +261,25 @@ class Abstrack_tracking(ABC):
         return file_name
 
     def get_hash(self) -> str:
-            return self.__hash_generator()
+        return self.__hash_generator()
+    
+    def get_file_name(self) -> str:
+        """
+        Returns the full file path for saving or loading simulation results,
+        based on the current parameters and algorithm.
+
+        Returns:
+            str: The full file path (including folder and generated file name).
+        """
+        file_name = self.__hash_generator()
+        file_path = self.parameters['save_folder'] + '/' + file_name
+        return file_path
     
     def __save_result(self, result: list, rss: float, time: float) -> None:
         # Save the result to numpy file and self.parameters to json file
         
         file_name = self.__hash_generator()
-        file_path = self.parameters['save_folder'] + '/' + file_name
+        file_path = self.get_file_name()
         os.makedirs(self.parameters['save_folder'], exist_ok=True)
         numpy_array = []
         for each in result:
